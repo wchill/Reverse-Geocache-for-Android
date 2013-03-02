@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -132,12 +133,23 @@ public class Programmer extends DialogFragment implements OnClickListener {
 		}
 	}
 	
+	/**
+	 * Called by the activity when a passcode has been set using the passcode dialog.
+	 *
+	 * @param code the passcode to save
+	 */
+	
 	public void setPasscode(int code) {
 		txts[5].setText(code + "");
 	}
 	
+	/**
+	 * Creates a dialog box prompting the user to enter a passcode.
+	 */
+	
 	private void promptPasscode() {
-	    FragmentTransaction ft = getActivity().getSupportFragmentManager().beginTransaction();
+		FragmentManager fm = getActivity().getSupportFragmentManager();
+	    FragmentTransaction ft = fm.beginTransaction();
 	    Fragment prev = getActivity().getSupportFragmentManager().findFragmentByTag("passcodePrompt");
 	    if (prev != null)
 	        ft.remove(prev);
@@ -146,9 +158,20 @@ public class Programmer extends DialogFragment implements OnClickListener {
 	    newFragment.show(ft, "passcodePrompt");
 	}
 	
+	/**
+	 * Creates and displays a Toast to alert the user of an error.
+	 *
+	 * @param s the message to say
+	 */
+	
 	private void sayErrMsg(String s) {
 		Toast.makeText(getActivity(), s, Toast.LENGTH_SHORT).show();
 	}
+	
+	/**
+	 * Helper class to ensure that {@link EditText} fields are within
+	 * desired limits.
+	 */
 	
 	class BoundsWatcher {
 		
@@ -166,12 +189,38 @@ public class Programmer extends DialogFragment implements OnClickListener {
 		String errMsg = "";
 		String compareErrMsg = "";
 		
+		/**
+		 * Constructor to set limits on an {@link EditText} and compare it
+		 * to another EditText.
+		 *
+		 * @param lower 		the lower limit
+		 * @param upper 		the upper limit
+		 * @param ed    		the EditText to be checked
+		 * @param c				the EditText to be compared against
+		 * @param h				whether ed must be less than c
+		 * @param msg			the message to be displayed if EditText is not within given limits
+		 * @param compareMsg	the message to be displayed if the EditText comparison check fails
+		 */
+		
 		public BoundsWatcher(int lower, int upper, EditText ed, EditText c, boolean h, String msg, String compareMsg) {
 			this(lower, upper, ed, msg);
 			compare = c;
 			higher = h;
 			compareErrMsg = compareMsg;
 		}
+		
+		/**
+		 * Constructor to set limits on an {@link EditText} and compare it
+		 * to another EditText.
+		 *
+		 * @param lower 		the lower limit
+		 * @param upper 		the upper limit
+		 * @param ed    		the EditText to be checked
+		 * @param c				the EditText to be compared against
+		 * @param h				whether ed must be less than c
+		 * @param msg			the message to be displayed if EditText is not within given limits
+		 * @param compareMsg	the message to be displayed if the EditText comparison check fails
+		 */
 		
 		public BoundsWatcher(double lower, double upper, EditText ed, EditText c, boolean h, String msg, String compareMsg) {
 			this(lower, upper, ed, msg);
@@ -180,12 +229,34 @@ public class Programmer extends DialogFragment implements OnClickListener {
 			compareErrMsg = compareMsg;
 		}
 		
+		/**
+		 * Constructor to set limits on an {@link EditText} and compare it
+		 * to another EditText.
+		 *
+		 * @param lower 		the lower limit
+		 * @param upper 		the upper limit
+		 * @param ed    		the EditText to be checked
+		 * @param c				the EditText to be compared against
+		 * @param h				whether ed must be less than c
+		 * @param msg			the message to be displayed if EditText is not within given limits
+		 * @param compareMsg	the message to be displayed if the EditText comparison check fails
+		 */
+		
 		public BoundsWatcher(long lower, long upper, EditText ed, EditText c, boolean h, String msg, String compareMsg) {
 			this(lower, upper, ed, msg);
 			compare = c;
 			higher = h;
 			compareErrMsg = compareMsg;
 		}
+		
+		/**
+		 * Constructor to set limits on an {@link EditText}.
+		 *
+		 * @param lower 		the lower limit
+		 * @param upper 		the upper limit
+		 * @param ed    		the EditText to be checked
+		 * @param msg			the message to be displayed if EditText is not within given limits
+		 */
 		
 		public BoundsWatcher(long lower, long upper, EditText et, String msg) {
 			lowerBoundLong = lower;
@@ -195,12 +266,30 @@ public class Programmer extends DialogFragment implements OnClickListener {
 			ed = et;
 		}
 		
+		/**
+		 * Constructor to set limits on an {@link EditText}.
+		 *
+		 * @param lower 		the lower limit
+		 * @param upper 		the upper limit
+		 * @param ed    		the EditText to be checked
+		 * @param msg			the message to be displayed if EditText is not within given limits
+		 */
+		
 		public BoundsWatcher(int lower, int upper, EditText et, String msg) {
 			lowerBound = lower;
 			upperBound = upper;
 			errMsg = msg;
 			ed = et;
 		}
+		
+		/**
+		 * Constructor to set limits on an {@link EditText}.
+		 *
+		 * @param lower 		the lower limit
+		 * @param upper 		the upper limit
+		 * @param ed    		the EditText to be checked
+		 * @param msg			the message to be displayed if EditText is not within given limits
+		 */
 		
 		public BoundsWatcher(double lower, double upper, EditText et, String msg) {
 			lowerBoundDouble = lower;
@@ -209,6 +298,12 @@ public class Programmer extends DialogFragment implements OnClickListener {
 			errMsg = msg;
 			ed = et;
 		}
+		
+		/**
+		 * Checks the given {@link EditText} to determine whether input is valid.
+		 *
+		 * @return true if the input is within given limits or blank, false otherwise
+		 */
 		
 		public boolean check() {
 			try {

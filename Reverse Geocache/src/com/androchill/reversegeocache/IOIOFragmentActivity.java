@@ -39,9 +39,9 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 
 /**
- * A convenience class for easy creation of IOIO-based activities.
+ * A convenience class for easy creation of IOIO-based fragment activities.
  * 
- * It is used by creating a concrete {@link Activity} in your application, which
+ * It is used by creating a concrete {@link FragmentActivity} in your application, which
  * extends this class. This class then takes care of proper creation and
  * abortion of the IOIO connection and of a dedicated thread for IOIO
  * communication.

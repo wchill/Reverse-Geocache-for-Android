@@ -67,5 +67,5 @@
     <string name="eight">8</string>
     <string name="nine">9</string>
     <string name="zero">0</string>
-    <string name="dialog_help">I\'m an evil person, so I\'ll leave you to figure out what to do. >:D I\'m sure you can figure it out though, you\'re smart enough!\nJust to note: you need to pair the box to this phone using Bluetooth and have GPS enabled. Also, if there are any bugs, please report them!</string>
+    <string name="dialog_help">I\'m an evil person, so I\'ll leave you to figure out what to do. >:D I\'m sure you can figure it out though, you\'re smart enough!\nJust to note: you need to pair the box to this phone using Bluetooth (device name IOIO, passcode 4545) and have GPS enabled. Also, if there are any bugs, please report them!</string>
 </resources>

@@ -16,6 +16,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+/**
+ * DialogFragment used to implement a popup passcode prompt.
+ */
+
 public class Passcode extends DialogFragment implements OnClickListener {
 	
 	Button[] btns = new Button[10];
@@ -39,6 +43,13 @@ public class Passcode extends DialogFragment implements OnClickListener {
                     + " must implement DialogListener");
         }
     }
+	
+	/**
+	 * Returns a new instance of this class with the given passcode..
+	 *
+	 * @param num a number representing the desired passcode (-1 to disable check)
+	 * @return a new instance of this class with the given passcode.
+	 */
 	
 	public static Passcode newInstance(int num) {
         Passcode f = new Passcode();
