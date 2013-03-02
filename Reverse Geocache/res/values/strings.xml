@@ -45,9 +45,17 @@
     <string name="reset_pin">Reset pin</string>
     <string name="reset_to_original">Reset to original</string>
     <string name="flash_to_box">Flash to box</string>
+    <string name="save_flash_data">Save to clipboard</string>
     <string name="programming_menu">Programming menu</string>
     <string name="enter_passcode">Enter passcode</string>
     <string name="incorrect_passcode">Incorrect passcode</string>
+    <string name="encrypt_failure">Encryption failed</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="bad_update_data">Bad update data, try again</string>
+    <string name="converting_data">Converting data</string>
+    <string name="please_wait">Please wait</string>
+    <string name="serial">Serial (64-bit)</string>
+    <string name="salt">Salt</string>
     <string name="delete">Delete</string>
     <string name="one">1</string>
     <string name="two">2</string>

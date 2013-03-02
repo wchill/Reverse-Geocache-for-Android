@@ -19,9 +19,9 @@ import android.widget.Toast;
 public class Programmer extends DialogFragment implements OnClickListener {
 	
 	private CheckBox[] cbs = new CheckBox[2];
-	private Button[] btns = new Button[2];
-	private EditText[] txts = new EditText[6];
-	private BoundsWatcher[] bws = new BoundsWatcher[6];
+	private Button[] btns = new Button[3];
+	private EditText[] txts = new EditText[7];
+	private BoundsWatcher[] bws = new BoundsWatcher[7];
 	private DialogListener mListener;
 	
 	@Override
@@ -51,16 +51,19 @@ public class Programmer extends DialogFragment implements OnClickListener {
 		txts[3] = (EditText) v.findViewById(R.id.field_longitude);
 		txts[4] = (EditText) v.findViewById(R.id.field_radius);
 		txts[5] = (EditText) v.findViewById(R.id.field_reset_code);
+		txts[6] = (EditText) v.findViewById(R.id.field_serial);
 		btns[0] = (Button) v.findViewById(R.id.button_reset);
 		btns[1] = (Button) v.findViewById(R.id.button_flash);
+		btns[2] = (Button) v.findViewById(R.id.button_save_data);
 		
-		String[] m = new String[6];
+		String[] m = new String[7];
 		m[0] = "Attempts must be between 0 and 250";
 		m[1] = "Attempts cannot exceed max attempts";
 		m[2] = "Latitude must be between -90 and 90";
 		m[3] = "Longitude must be between -180 and 180";
 		m[4] = "Radius must be between 10 and 100000";
 		m[5] = "Reset code must be between 0000 and 9999";
+		m[6] = "Must be a valid 64-bit number";
 		
 		bws[0] = new BoundsWatcher(0, 250, txts[0], txts[1], true, m[0], m[1]);
 		bws[1] = new BoundsWatcher(1, 250, txts[1], txts[0], false, m[0], m[1]);
@@ -68,6 +71,7 @@ public class Programmer extends DialogFragment implements OnClickListener {
 		bws[3] = new BoundsWatcher(-180.0, 180.0, txts[3], m[3]);
 		bws[4] = new BoundsWatcher(10, 100000, txts[4], m[4]);
 		bws[5] = new BoundsWatcher(0, 9999, txts[5], m[5]);
+		bws[6] = new BoundsWatcher(0, Long.MAX_VALUE, txts[6], m[6]);
 		
 		txts[5].setOnClickListener(this);
 		for(Button b : btns)
@@ -88,11 +92,12 @@ public class Programmer extends DialogFragment implements OnClickListener {
 
 	@Override
 	public void onClick(View v) {
+		boolean ok = true;
 		switch(v.getId()) {
 		case R.id.button_reset:
 			break;
 		case R.id.button_flash:
-			boolean ok = true;
+		case R.id.button_save_data:
 			for(BoundsWatcher b : bws) {
 				if(!b.check()) {
 					ok = false;
@@ -101,6 +106,7 @@ public class Programmer extends DialogFragment implements OnClickListener {
 			}
 			if(ok) {
 				Bundle b = new Bundle();
+				b.putBoolean("save", v.getId() == R.id.button_save_data);
 				b.putBoolean("solved", cbs[0].isChecked());
 				b.putBoolean("unlocked", cbs[1].isChecked());
 				if(txts[0].length() > 0)
@@ -115,6 +121,8 @@ public class Programmer extends DialogFragment implements OnClickListener {
 					b.putInt("radius", Integer.parseInt(txts[4].getText().toString()));
 				if(txts[5].length() > 0)
 					b.putInt("resetpin", Integer.parseInt(txts[5].getText().toString()));
+				if(txts[6].length() > 0)
+					b.putLong("serial", Long.parseLong(txts[6].getText().toString()));
 				mListener.onDialogPositiveClick(this, b);
 			}
 			break;
@@ -146,9 +154,12 @@ public class Programmer extends DialogFragment implements OnClickListener {
 		
 		int lowerBound;
 		int upperBound;
+		long lowerBoundLong;
+		long upperBoundLong;
 		double lowerBoundDouble;
 		double upperBoundDouble;
 		boolean isDouble = false;
+		boolean isLong = false;
 		EditText ed = null;
 		EditText compare = null;
 		boolean higher = false;
@@ -167,6 +178,21 @@ public class Programmer extends DialogFragment implements OnClickListener {
 			compare = c;
 			higher = h;
 			compareErrMsg = compareMsg;
+		}
+		
+		public BoundsWatcher(long lower, long upper, EditText ed, EditText c, boolean h, String msg, String compareMsg) {
+			this(lower, upper, ed, msg);
+			compare = c;
+			higher = h;
+			compareErrMsg = compareMsg;
+		}
+		
+		public BoundsWatcher(long lower, long upper, EditText et, String msg) {
+			lowerBoundLong = lower;
+			upperBoundLong = upper;
+			isLong = true;
+			errMsg = msg;
+			ed = et;
 		}
 		
 		public BoundsWatcher(int lower, int upper, EditText et, String msg) {
@@ -188,7 +214,7 @@ public class Programmer extends DialogFragment implements OnClickListener {
 			try {
 				if(ed.length() == 0) return true;
 				if(isDouble) {
-					double d = Double.parseDouble(ed.toString());
+					double d = Double.parseDouble(ed.getText().toString());
 					if(lowerBoundDouble > d || upperBoundDouble < d) {
 						sayErrMsg(errMsg);
 						return false;
@@ -200,8 +226,21 @@ public class Programmer extends DialogFragment implements OnClickListener {
 							return false;
 						}
 					}
+				} else if(isLong) {
+					long k = Long.parseLong(ed.getText().toString());
+					if(lowerBoundLong > k || upperBoundLong < k) {
+						sayErrMsg(errMsg);
+						return false;
+					}
+					if(compare != null && compare.length() > 0) {
+						long k1 = Long.parseLong(compare.getText().toString());
+						if(higher && k1 < k || !higher && k1 > k) {
+							sayErrMsg(compareErrMsg);
+							return false;
+						}
+					}
 				} else {
-					int k = Integer.parseInt(ed.toString());
+					int k = Integer.parseInt(ed.getText().toString());
 					if(lowerBound > k || upperBound < k) {
 						sayErrMsg(errMsg);
 						return false;
@@ -216,6 +255,7 @@ public class Programmer extends DialogFragment implements OnClickListener {
 				}
 			} catch (NumberFormatException e) {
 				sayErrMsg("Invalid number");
+				e.printStackTrace();
 				return false;
 			}
 			return true;

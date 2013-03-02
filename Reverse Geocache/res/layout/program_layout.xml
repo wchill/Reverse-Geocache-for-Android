@@ -80,7 +80,7 @@
             android:layout_weight="50"
             android:ems="10"
             android:hint="@string/latitude"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal|numberSigned" />
 
         <EditText
             android:id="@+id/field_longitude"
@@ -89,7 +89,7 @@
             android:layout_weight="50"
             android:ems="10"
             android:hint="@string/longitude"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal|numberSigned" />
     </LinearLayout>
 
     <LinearLayout
@@ -119,14 +119,32 @@
             android:inputType="number"
             android:focusable="false" />
     </LinearLayout>
-
+    
     <LinearLayout
         android:id="@+id/programming_row_5"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:weightSum="100"
-        android:orientation="vertical"
+        android:gravity="center_vertical"
         android:layout_below="@id/programming_row_4" >
+
+        <EditText
+            android:id="@+id/field_serial"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="100"
+            android:ems="10"
+            android:hint="@string/serial"
+            android:inputType="number" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/programming_row_6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="150"
+        android:orientation="vertical"
+        android:layout_below="@id/programming_row_5" >
 
         <Button
             android:id="@+id/button_reset"
@@ -141,7 +159,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="50"
             android:text="@string/flash_to_box"/>
-
+    <Button
+        android:id="@+id/button_save_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="50"
+        android:text="@string/save_flash_data" />
     </LinearLayout>
 
 </RelativeLayout>
