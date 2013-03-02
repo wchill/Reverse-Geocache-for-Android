@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:layout_margin="40dip">
+
+    <TextView
+        android:id="@+id/programming_menu_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/programming_menu"
+        android:gravity="center_horizontal"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+    
+    <LinearLayout
+        android:id="@+id/programming_row_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100"
+        android:gravity="center"
+        android:layout_below="@id/programming_menu_text" >
+
+        <CheckBox
+            android:id="@+id/checkBox_solved"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:text="@string/solved" />
+
+        <CheckBox
+            android:id="@+id/checkBox_unlocked"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:text="@string/unlocked" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/programming_row_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100"
+        android:gravity="center_vertical"
+        android:layout_below="@id/programming_row_1" >
+
+        <EditText
+            android:id="@+id/field_attempts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:ems="10"
+            android:hint="@string/attempts_used"
+            android:inputType="number" >
+
+        </EditText>
+
+        <EditText
+            android:id="@+id/field_max_attempts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:ems="10"
+            android:hint="@string/total_attempts"
+            android:inputType="number" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/programming_row_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100"
+        android:gravity="center_vertical"
+        android:layout_below="@id/programming_row_2" >
+
+        <EditText
+            android:id="@+id/field_latitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:ems="10"
+            android:hint="@string/latitude"
+            android:inputType="numberDecimal" />
+
+        <EditText
+            android:id="@+id/field_longitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:ems="10"
+            android:hint="@string/longitude"
+            android:inputType="numberDecimal" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/programming_row_4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100"
+        android:gravity="center_vertical"
+        android:layout_below="@id/programming_row_3" >
+
+        <EditText
+            android:id="@+id/field_radius"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:ems="10"
+            android:hint="@string/radius"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/field_reset_code"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:ems="10"
+            android:hint="@string/reset_pin"
+            android:inputType="number"
+            android:focusable="false" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/programming_row_5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100"
+        android:orientation="vertical"
+        android:layout_below="@id/programming_row_4" >
+
+        <Button
+            android:id="@+id/button_reset"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:text="@string/reset_to_original" />
+
+        <Button
+            android:id="@+id/button_flash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:text="@string/flash_to_box"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

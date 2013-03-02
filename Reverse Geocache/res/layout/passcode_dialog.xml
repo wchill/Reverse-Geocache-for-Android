@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:layout_margin="40dip" >
+
+    <TextView
+        android:id="@+id/passcode_prompt_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/enter_passcode"
+        android:layout_centerHorizontal="true"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+    
+    <LinearLayout
+        android:id="@+id/passcode_row_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:weightSum="100"
+        android:layout_below="@id/passcode_prompt_text" >
+
+        <EditText
+            android:id="@+id/passcode_digit_box_1"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="10"
+            android:enabled="false"
+            android:gravity="center"
+            android:inputType="none" >
+        </EditText>
+
+        <EditText
+            android:id="@+id/passcode_digit_box_2"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="10"
+            android:enabled="false"
+            android:gravity="center"
+            android:inputType="none" >
+        </EditText>
+
+        <EditText
+            android:id="@+id/passcode_digit_box_3"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="10"
+            android:enabled="false"
+            android:gravity="center"
+            android:inputType="none" >
+        </EditText>
+
+        <EditText
+            android:id="@+id/passcode_digit_box_4"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="10"
+            android:enabled="false"
+            android:gravity="center"
+            android:inputType="none" >
+        </EditText>
+
+    </LinearLayout>
+    
+    <LinearLayout
+        android:id="@+id/passcode_row_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:weightSum="100"
+        android:layout_below="@id/passcode_row_1" >
+
+        <Button
+            android:id="@+id/button_pass_one"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/one" />
+
+        <Button
+            android:id="@+id/button_pass_two"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/two" />
+
+        <Button
+            android:id="@+id/button_pass_three"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/three" />
+    </LinearLayout>
+
+    
+    <LinearLayout
+        android:id="@+id/passcode_row_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:weightSum="100"
+        android:layout_below="@id/passcode_row_2" >
+
+        <Button
+            android:id="@+id/button_pass_four"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/four" />
+
+        <Button
+            android:id="@+id/button_pass_five"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/five" />
+
+        <Button
+            android:id="@+id/button_pass_six"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/six" />
+    </LinearLayout>
+    
+    
+    <LinearLayout
+        android:id="@+id/passcode_row_4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:weightSum="100"
+        android:layout_below="@id/passcode_row_3" >
+
+        <Button
+            android:id="@+id/button_pass_seven"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/seven" />
+
+        <Button
+            android:id="@+id/button_pass_eight"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/eight" />
+
+        <Button
+            android:id="@+id/button_pass_nine"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/nine" />
+    </LinearLayout>
+    
+    <LinearLayout
+        android:id="@+id/passcode_row_5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:weightSum="100"
+        android:layout_below="@id/passcode_row_4" >
+
+        <Button
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:visibility="invisible" >
+        </Button>
+
+        <Button
+            android:id="@+id/button_pass_zero"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:text="@string/zero" />
+
+        <ImageButton
+            android:id="@+id/button_pass_back"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:contentDescription="@string/delete"
+            android:src="@drawable/ic_action_delete_light" />
+    </LinearLayout>
+
+
+</RelativeLayout>

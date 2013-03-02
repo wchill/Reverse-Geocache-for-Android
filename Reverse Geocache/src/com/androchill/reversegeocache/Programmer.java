@@ -1,0 +1,224 @@
+package com.androchill.reversegeocache;
+
+import android.app.Activity;
+import android.app.Dialog;
+import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.Toast;
+
+public class Programmer extends DialogFragment implements OnClickListener {
+	
+	private CheckBox[] cbs = new CheckBox[2];
+	private Button[] btns = new Button[2];
+	private EditText[] txts = new EditText[6];
+	private BoundsWatcher[] bws = new BoundsWatcher[6];
+	private DialogListener mListener;
+	
+	@Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        // Verify that the host activity implements the callback interface
+        try {
+            // Instantiate the DialogListener so we can send events to the host
+            mListener = (DialogListener) activity;
+        } catch (ClassCastException e) {
+            // The activity doesn't implement the interface, throw exception
+            throw new ClassCastException(activity.toString()
+                    + " must implement DialogListener");
+        }
+    }
+	
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+	        Bundle savedInstanceState) {
+	    // Inflate the layout to use as dialog or embedded fragment
+		View v = inflater.inflate(R.layout.program_layout, container, false);
+		cbs[0] = (CheckBox) v.findViewById(R.id.checkBox_solved);
+		cbs[1] = (CheckBox) v.findViewById(R.id.checkBox_unlocked);
+		txts[0] = (EditText) v.findViewById(R.id.field_attempts);
+		txts[1] = (EditText) v.findViewById(R.id.field_max_attempts);
+		txts[2] = (EditText) v.findViewById(R.id.field_latitude);
+		txts[3] = (EditText) v.findViewById(R.id.field_longitude);
+		txts[4] = (EditText) v.findViewById(R.id.field_radius);
+		txts[5] = (EditText) v.findViewById(R.id.field_reset_code);
+		btns[0] = (Button) v.findViewById(R.id.button_reset);
+		btns[1] = (Button) v.findViewById(R.id.button_flash);
+		
+		String[] m = new String[6];
+		m[0] = "Attempts must be between 0 and 250";
+		m[1] = "Attempts cannot exceed max attempts";
+		m[2] = "Latitude must be between -90 and 90";
+		m[3] = "Longitude must be between -180 and 180";
+		m[4] = "Radius must be between 10 and 100000";
+		m[5] = "Reset code must be between 0000 and 9999";
+		
+		bws[0] = new BoundsWatcher(0, 250, txts[0], txts[1], true, m[0], m[1]);
+		bws[1] = new BoundsWatcher(1, 250, txts[1], txts[0], false, m[0], m[1]);
+		bws[2] = new BoundsWatcher(-90.0, 90.0, txts[2], m[2]);
+		bws[3] = new BoundsWatcher(-180.0, 180.0, txts[3], m[3]);
+		bws[4] = new BoundsWatcher(10, 100000, txts[4], m[4]);
+		bws[5] = new BoundsWatcher(0, 9999, txts[5], m[5]);
+		
+		txts[5].setOnClickListener(this);
+		for(Button b : btns)
+			b.setOnClickListener(this);
+		return v;
+	}
+	
+	@Override
+	public Dialog onCreateDialog(Bundle savedInstanceState) {
+	    // The only reason you might override this method when using onCreateView() is
+	    // to modify any dialog characteristics. For example, the dialog includes a
+	    // title by default, but your custom layout might not need it. So here you can
+	    // remove the dialog title, but you must call the superclass to get the Dialog.
+	    Dialog dialog = super.onCreateDialog(savedInstanceState);
+	    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+	    return dialog;
+	}
+
+	@Override
+	public void onClick(View v) {
+		switch(v.getId()) {
+		case R.id.button_reset:
+			break;
+		case R.id.button_flash:
+			boolean ok = true;
+			for(BoundsWatcher b : bws) {
+				if(!b.check()) {
+					ok = false;
+					break;
+				}
+			}
+			if(ok) {
+				Bundle b = new Bundle();
+				b.putBoolean("solved", cbs[0].isChecked());
+				b.putBoolean("unlocked", cbs[1].isChecked());
+				if(txts[0].length() > 0)
+					b.putInt("attempts", Integer.parseInt(txts[0].getText().toString()));
+				if(txts[1].length() > 0)
+					b.putInt("maxattempts", Integer.parseInt(txts[1].getText().toString()));
+				if(txts[2].length() > 0)
+					b.putDouble("latitude", Double.parseDouble(txts[2].getText().toString()));
+				if(txts[3].length() > 0)
+					b.putDouble("longitude", Double.parseDouble(txts[3].getText().toString()));
+				if(txts[4].length() > 0)
+					b.putInt("radius", Integer.parseInt(txts[4].getText().toString()));
+				if(txts[5].length() > 0)
+					b.putInt("resetpin", Integer.parseInt(txts[5].getText().toString()));
+				mListener.onDialogPositiveClick(this, b);
+			}
+			break;
+		case R.id.field_reset_code:
+			promptPasscode();
+			break;
+		}
+	}
+	
+	public void setPasscode(int code) {
+		txts[5].setText(code + "");
+	}
+	
+	private void promptPasscode() {
+	    FragmentTransaction ft = getActivity().getSupportFragmentManager().beginTransaction();
+	    Fragment prev = getActivity().getSupportFragmentManager().findFragmentByTag("passcodePrompt");
+	    if (prev != null)
+	        ft.remove(prev);
+	    ft.addToBackStack(null);
+	    DialogFragment newFragment = Passcode.newInstance(-1);
+	    newFragment.show(ft, "passcodePrompt");
+	}
+	
+	private void sayErrMsg(String s) {
+		Toast.makeText(getActivity(), s, Toast.LENGTH_SHORT).show();
+	}
+	
+	class BoundsWatcher {
+		
+		int lowerBound;
+		int upperBound;
+		double lowerBoundDouble;
+		double upperBoundDouble;
+		boolean isDouble = false;
+		EditText ed = null;
+		EditText compare = null;
+		boolean higher = false;
+		String errMsg = "";
+		String compareErrMsg = "";
+		
+		public BoundsWatcher(int lower, int upper, EditText ed, EditText c, boolean h, String msg, String compareMsg) {
+			this(lower, upper, ed, msg);
+			compare = c;
+			higher = h;
+			compareErrMsg = compareMsg;
+		}
+		
+		public BoundsWatcher(double lower, double upper, EditText ed, EditText c, boolean h, String msg, String compareMsg) {
+			this(lower, upper, ed, msg);
+			compare = c;
+			higher = h;
+			compareErrMsg = compareMsg;
+		}
+		
+		public BoundsWatcher(int lower, int upper, EditText et, String msg) {
+			lowerBound = lower;
+			upperBound = upper;
+			errMsg = msg;
+			ed = et;
+		}
+		
+		public BoundsWatcher(double lower, double upper, EditText et, String msg) {
+			lowerBoundDouble = lower;
+			upperBoundDouble = upper;
+			isDouble = true;
+			errMsg = msg;
+			ed = et;
+		}
+		
+		public boolean check() {
+			try {
+				if(ed.length() == 0) return true;
+				if(isDouble) {
+					double d = Double.parseDouble(ed.toString());
+					if(lowerBoundDouble > d || upperBoundDouble < d) {
+						sayErrMsg(errMsg);
+						return false;
+					}
+					if(compare != null && compare.length() > 0) {
+						double d1 = Double.parseDouble(compare.getText().toString());
+						if(higher && d1 < d || !higher && d1 > d) {
+							sayErrMsg(compareErrMsg);
+							return false;
+						}
+					}
+				} else {
+					int k = Integer.parseInt(ed.toString());
+					if(lowerBound > k || upperBound < k) {
+						sayErrMsg(errMsg);
+						return false;
+					}
+					if(compare != null && compare.length() > 0) {
+						int k1 = Integer.parseInt(compare.getText().toString());
+						if(higher && k1 < k || !higher && k1 > k) {
+							sayErrMsg(compareErrMsg);
+							return false;
+						}
+					}
+				}
+			} catch (NumberFormatException e) {
+				sayErrMsg("Invalid number");
+				return false;
+			}
+			return true;
+		}
+	}
+}
