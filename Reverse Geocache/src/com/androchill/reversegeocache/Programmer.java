@@ -24,6 +24,18 @@ public class Programmer extends DialogFragment implements OnClickListener {
 	private EditText[] txts = new EditText[7];
 	private BoundsWatcher[] bws = new BoundsWatcher[7];
 	private DialogListener mListener;
+	private long boxSerial;
+	
+	public static DialogFragment newInstance(long boxSerial) {
+		Programmer f = new Programmer();
+
+        // Supply num input as an argument.
+        Bundle args = new Bundle();
+        args.putLong("serial", boxSerial);
+        f.setArguments(args);
+
+        return f;
+	}
 	
 	@Override
     public void onAttach(Activity activity) {
@@ -42,6 +54,7 @@ public class Programmer extends DialogFragment implements OnClickListener {
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 	        Bundle savedInstanceState) {
+		boxSerial = getArguments().getLong("serial", Long.MAX_VALUE);
 	    // Inflate the layout to use as dialog or embedded fragment
 		View v = inflater.inflate(R.layout.program_layout, container, false);
 		cbs[0] = (CheckBox) v.findViewById(R.id.checkBox_solved);
@@ -74,6 +87,8 @@ public class Programmer extends DialogFragment implements OnClickListener {
 		bws[5] = new BoundsWatcher(0, 9999, txts[5], m[5]);
 		bws[6] = new BoundsWatcher(0, Long.MAX_VALUE, txts[6], m[6]);
 		
+		txts[6].setText(String.valueOf(boxSerial));
+		
 		txts[5].setOnClickListener(this);
 		for(Button b : btns)
 			b.setOnClickListener(this);
@@ -104,6 +119,10 @@ public class Programmer extends DialogFragment implements OnClickListener {
 					ok = false;
 					break;
 				}
+			}
+			if(txts[6].length() == 0) {
+				ok = false;
+				Toast.makeText(getActivity(), "Must provide a serial number", Toast.LENGTH_SHORT).show();
 			}
 			if(ok) {
 				Bundle b = new Bundle();

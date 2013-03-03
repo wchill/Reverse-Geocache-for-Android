@@ -34,6 +34,7 @@ import javax.crypto.spec.SecretKeySpec;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -97,7 +98,7 @@ public class ReverseGeocache extends IOIOActivity implements
 	private boolean enableButton = false;
 
 	// Puzzle variables
-	private long boxSerial = Long.MIN_VALUE;
+	private long boxSerial = Long.MAX_VALUE;
 	private int[] attempts = new int[] { 0, 1 };
 	private boolean solved = false;
 	private boolean unlocked = false;
@@ -119,6 +120,8 @@ public class ReverseGeocache extends IOIOActivity implements
 			100, true);
 
 	// constants
+	static final long UNIVERSAL_UPDATE = Long.MAX_VALUE;
+	
 	// IOIO commands
 	private static final int COMMAND_WRITE_SOLVED = 0;
 	private static final int COMMAND_WRITE_UNLOCKED = 1;
@@ -519,6 +522,7 @@ public class ReverseGeocache extends IOIOActivity implements
 					e.printStackTrace();
 					eeprom[HardwareLooper.VERSION_ADDRESS] = (byte) 0;
 				}
+				
 				long l = b.getLong("serial", -1);
 				buf = ByteConversion.longToByteArray(l);
 				System.arraycopy(buf, 0, eeprom, HardwareLooper.SERIAL_ADDRESS,
@@ -726,6 +730,21 @@ public class ReverseGeocache extends IOIOActivity implements
 	}
 
 	/**
+	 * Pops up a {@link DialogFragment} to allow the user to reprogram the box.
+	 */
+	
+	private void showProgrammer() {
+		FragmentManager fm = getFragmentManager();
+	    FragmentTransaction ft = fm.beginTransaction();
+	    Fragment prev = getFragmentManager().findFragmentByTag("programmer");
+	    if (prev != null)
+	        ft.remove(prev);
+	    ft.addToBackStack(null);
+	    DialogFragment newFragment = Programmer.newInstance(boxSerial);
+	    newFragment.show(ft, "programmer");
+	}
+	
+	/**
 	 * Pops up an {@link AlertDialog} prompting the user for update data.
 	 */
 
@@ -892,7 +911,7 @@ public class ReverseGeocache extends IOIOActivity implements
 				try {
 					SecretKey secret = deriveKey(Long.valueOf(ENC_KEY)
 							.toString().toCharArray(),
-							ByteConversion.longToByteArray(-1));
+							ByteConversion.longToByteArray(UNIVERSAL_UPDATE));
 					String[] enc = data[0].split(" ");
 					String plaintext = decryptString(secret,
 							ByteConversion.hexStringToByteArray(enc[0]),
