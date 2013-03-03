@@ -218,6 +218,35 @@
             android:visibility="invisible" />
 
     </RelativeLayout>
+    
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <ImageView
+            android:id="@+id/serial_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/attempts"
+            android:src="@drawable/ic_action_info" />
+
+        <TextView
+            android:id="@+id/serial_number_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@+id/serial_icon"
+            android:text="@string/serial" />
+
+        <TextView
+            android:id="@+id/serial_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="5dip"
+            android:text="@string/unavailable" />
+    </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"

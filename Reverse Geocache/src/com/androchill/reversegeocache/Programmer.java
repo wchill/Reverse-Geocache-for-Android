@@ -140,7 +140,9 @@ public class Programmer extends DialogFragment implements OnClickListener {
 	 */
 	
 	public void setPasscode(int code) {
-		txts[5].setText(code + "");
+		// pad to 4 digits if there are leading zeros
+		int length = String.valueOf(code).length();
+		txts[5].setText("000".substring(0, 4-length) + code);
 	}
 	
 	/**

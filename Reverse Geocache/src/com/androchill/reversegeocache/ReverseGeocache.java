@@ -88,6 +88,7 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 	private TextView lockStatus;
 	private ImageView lockImage;
 	private Button unlockButton;
+	private TextView serialText;
 	private boolean btConnected = false;
 	private boolean btIconState = false;
 	private boolean btDisabled = true;
@@ -226,7 +227,7 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 					lockImage
 							.setImageResource((unlocked ? R.drawable.ic_action_unlock
 									: R.drawable.ic_action_lock));
-
+					serialText.setText(String.valueOf(boxSerial));
 					if (!enableButton)
 						enableButton = true;
 					else
@@ -373,6 +374,7 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 		connectionStatus = (TextView) findViewById(R.id.connection_status_text);
 		attemptsStatus = (TextView) findViewById(R.id.attempts_status_text);
 		lockStatus = (TextView) findViewById(R.id.lock_status_text);
+		serialText = (TextView) findViewById(R.id.serial_number);
 
 		unlockButton = (Button) findViewById(R.id.attempt_unlock_button);
 		unlockButton.setOnClickListener(this);
@@ -891,7 +893,7 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 				SecretKey secret = deriveKey(Long.valueOf(ENC_KEY).toString()
 						.toCharArray(),
 						ByteConversion.longToByteArray(boxSerial));
-				String[] enc = data[0].split(" ");
+				String[] enc = data[0].split(":");
 				String plaintext = decryptString(secret,
 						ByteConversion.hexStringToByteArray(enc[0]),
 						ByteConversion.hexStringToByteArray(enc[1]));
@@ -952,7 +954,7 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 						ByteConversion.longToByteArray(boxSerial));
 				byte[][] senc = encryptString(secret, data[0]);
 				String encrypted = ByteConversion.byteArrayToHexString(senc[0])
-						+ " " + ByteConversion.byteArrayToHexString(senc[1]);
+						+ ":" + ByteConversion.byteArrayToHexString(senc[1]);
 				return encrypted;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -1032,6 +1034,50 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 		private static final int SERVO_OPEN = 2000;
 		private static final int PWM_FREQ = 100;
 
+		/**
+		 * Called once after the HardwareLooper has been created. Sets up all
+		 * outputs/inputs, prepares I2C communication with EEPROM and reads data
+		 * from EEPROM. UI elements are then enabled and battery state updating
+		 * begins.
+		 * 
+		 * If an exception is encountered, UI elements will be disabled.
+		 * 
+		 * @throws ConnectionLostException
+		 *             if connection with IOIO is lost during setup
+		 */
+
+		public void setup() throws ConnectionLostException {
+			try {
+				servoPwmOutput = ioio_.openPwmOutput(new DigitalOutput.Spec(
+						SERVO_PIN, Mode.OPEN_DRAIN), PWM_FREQ);
+				battery = ioio_.openAnalogInput(BATTERY_PIN);
+				eeprom = ioio_.openTwiMaster(1, TwiMaster.Rate.RATE_100KHz,
+						false);
+				powerOffOutput = ioio_.openDigitalOutput(POWER_OFF_PIN);
+
+				gpsLocation = readCoords();
+				attempts = readAttempts();
+				solved = readState();
+				resetPin = readResetPin();
+				boxSerial = readSerial();
+				unlocked = readLock();
+
+				ioioConnected = true;
+
+				connectTimer.cancel();
+				enableUi(true);
+
+				batteryTimer.start();
+
+			} catch (ConnectionLostException e) {
+				enableUi(false);
+				throw e;
+			} catch (InterruptedException e) {
+				enableUi(false);
+				e.printStackTrace();
+			}
+		}
+		
 		/**
 		 * Automatically called 100 times per second.
 		 * 
@@ -1335,49 +1381,6 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 			writeAttempts(0);
 		}
 
-		/**
-		 * Called once after the HardwareLooper has been created. Sets up all
-		 * outputs/inputs, prepares I2C communication with EEPROM and reads data
-		 * from EEPROM. UI elements are then enabled and battery state updating
-		 * begins.
-		 * 
-		 * If an exception is encountered, UI elements will be disabled.
-		 * 
-		 * @throws ConnectionLostException
-		 *             if connection with IOIO is lost during setup
-		 */
-
-		public void setup() throws ConnectionLostException {
-			try {
-				servoPwmOutput = ioio_.openPwmOutput(new DigitalOutput.Spec(
-						SERVO_PIN, Mode.OPEN_DRAIN), PWM_FREQ);
-				battery = ioio_.openAnalogInput(BATTERY_PIN);
-				eeprom = ioio_.openTwiMaster(1, TwiMaster.Rate.RATE_100KHz,
-						false);
-				powerOffOutput = ioio_.openDigitalOutput(POWER_OFF_PIN);
-
-				gpsLocation = readCoords();
-				attempts = readAttempts();
-				solved = readState();
-				resetPin = readResetPin();
-				boxSerial = readSerial();
-				unlocked = readLock();
-
-				ioioConnected = true;
-
-				connectTimer.cancel();
-				enableUi(true);
-
-				batteryTimer.start();
-
-			} catch (ConnectionLostException e) {
-				enableUi(false);
-				throw e;
-			} catch (InterruptedException e) {
-				enableUi(false);
-				e.printStackTrace();
-			}
-		}
 
 		/**
 		 * Writes a new unlock state to EEPROM and locks/unlocks the box
