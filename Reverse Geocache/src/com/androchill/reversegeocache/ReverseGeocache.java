@@ -8,7 +8,7 @@ import ioio.lib.api.TwiMaster;
 import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
-import ioio.lib.util.android.IOIOFragmentActivity;
+import ioio.lib.util.android.IOIOActivity;
 
 import java.io.UnsupportedEncodingException;
 import java.security.AlgorithmParameters;
@@ -31,11 +31,13 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -46,10 +48,8 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
-import android.text.ClipboardManager;
+import android.app.DialogFragment;
+import android.content.ClipboardManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -63,8 +63,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-@SuppressWarnings("deprecation")
-public class ReverseGeocache extends IOIOFragmentActivity implements
+public class ReverseGeocache extends IOIOActivity implements
 		OnClickListener, DialogListener {
 
 	// 64 bit key used for encrypting/decrypting update data
@@ -303,7 +302,6 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 		}
 	}
 
-	@SuppressLint("NewApi")
 	@Override
 	public void onClick(View v) {
 
@@ -342,8 +340,7 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 				e.printStackTrace();
 			}
 		} else if (attempts[0] >= attempts[1]) {
-			AlertDialog.Builder builder = (android.os.Build.VERSION.SDK_INT < 11) ? new AlertDialog.Builder(
-					this) : new AlertDialog.Builder(this,
+			AlertDialog.Builder builder = new AlertDialog.Builder(this,
 					AlertDialog.THEME_HOLO_DARK);
 			builder.setTitle(R.string.out_of_attempts)
 					.setMessage(R.string.locked_forever)
@@ -351,15 +348,13 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 		}
 	}
 
-	@SuppressLint("InlinedApi")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		// Set the layout and theme of activity
 		setContentView(R.layout.activity_reverse_geocache);
-		setTheme((android.os.Build.VERSION.SDK_INT < 11) ? android.R.style.Theme_Light
-				: android.R.style.Theme_Holo_Light);
+		setTheme(android.R.style.Theme_Holo_Light);
 
 		// Initialize timers
 		batteryTimer = new BatteryTimer(120000, 5000);
@@ -462,10 +457,10 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 	public void onDialogPositiveClick(DialogFragment dialog, Bundle b) {
 
 		if (dialog.getTag().equals("passcode")) {
-			new Programmer().show(getSupportFragmentManager(), "programmer");
+			new Programmer().show(getFragmentManager(), "programmer");
 		} else if (dialog.getTag().equals("passcodePrompt")) {
 			// find the existing programming menu and set the new passcode
-			((Programmer) getSupportFragmentManager().findFragmentByTag(
+			((Programmer) getFragmentManager().findFragmentByTag(
 					"programmer")).setPasscode(b.getInt("code", 0));
 		} else if (dialog.getTag().equals("programmer")) {
 			boolean save = b.getBoolean("save");
@@ -634,10 +629,8 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 	 * strings.xml.
 	 */
 
-	@SuppressLint("NewApi")
 	private void popupHelp() {
-		AlertDialog.Builder builder = (android.os.Build.VERSION.SDK_INT < 11) ? new AlertDialog.Builder(
-				this) : new AlertDialog.Builder(this,
+		AlertDialog.Builder builder = new AlertDialog.Builder(this,
 				AlertDialog.THEME_HOLO_DARK);
 		builder.setMessage(R.string.dialog_help)
 				.setNeutralButton(R.string.ok, null).setTitle("Help");
@@ -650,10 +643,8 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 	 * exiting if GPS remains disabled.
 	 */
 
-	@SuppressLint("NewApi")
 	public void promptGpsEnable() {
-		AlertDialog.Builder builder = (android.os.Build.VERSION.SDK_INT < 11) ? new AlertDialog.Builder(
-				this) : new AlertDialog.Builder(this,
+		AlertDialog.Builder builder = new AlertDialog.Builder(this,
 				AlertDialog.THEME_HOLO_DARK);
 		builder.setTitle(R.string.gps_disabled)
 				.setMessage(R.string.gps_enable_prompt)
@@ -704,10 +695,8 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 	 * be found.
 	 */
 
-	@SuppressLint("NewApi")
 	public void showNotFound() {
-		AlertDialog.Builder builder = (android.os.Build.VERSION.SDK_INT < 11) ? new AlertDialog.Builder(
-				this) : new AlertDialog.Builder(this,
+		AlertDialog.Builder builder = new AlertDialog.Builder(this,
 				AlertDialog.THEME_HOLO_DARK);
 		builder.setTitle(R.string.ioio_not_found_title)
 				.setMessage(R.string.ioio_not_found)
@@ -724,8 +713,8 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 		// DialogFragment.show() will take care of adding the fragment
 		// in a transaction. We also want to remove any currently showing
 		// dialog, so make our own transaction and take care of that here.
-		FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-		Fragment prev = getSupportFragmentManager().findFragmentByTag(
+		FragmentTransaction ft = getFragmentManager().beginTransaction();
+		Fragment prev = getFragmentManager().findFragmentByTag(
 				"passcode");
 		if (prev != null)
 			ft.remove(prev);
@@ -967,7 +956,8 @@ public class ReverseGeocache extends IOIOFragmentActivity implements
 			d.dismiss();
 			if (data != null) {
 				ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-				clipboard.setText(data);
+				ClipData clip = ClipData.newPlainText("update data", data);
+				clipboard.setPrimaryClip(clip);
 				Toast.makeText(ReverseGeocache.this,
 						R.string.copied_to_clipboard, Toast.LENGTH_SHORT)
 						.show();

@@ -1,7 +1,7 @@
 package com.androchill.reversegeocache;
 
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
+import android.app.DialogFragment;
 
 public interface DialogListener {
 	

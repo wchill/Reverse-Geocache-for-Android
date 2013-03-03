@@ -3,10 +3,10 @@ package com.androchill.reversegeocache;
 import android.app.Activity;
 import android.app.Dialog;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -150,9 +150,9 @@ public class Programmer extends DialogFragment implements OnClickListener {
 	 */
 	
 	private void promptPasscode() {
-		FragmentManager fm = getActivity().getSupportFragmentManager();
+		FragmentManager fm = getActivity().getFragmentManager();
 	    FragmentTransaction ft = fm.beginTransaction();
-	    Fragment prev = getActivity().getSupportFragmentManager().findFragmentByTag("passcodePrompt");
+	    Fragment prev = getActivity().getFragmentManager().findFragmentByTag("passcodePrompt");
 	    if (prev != null)
 	        ft.remove(prev);
 	    ft.addToBackStack(null);
