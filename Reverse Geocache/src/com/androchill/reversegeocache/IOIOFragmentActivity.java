@@ -33,7 +33,6 @@ import ioio.lib.impl.SocketIOIOConnection;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.IOIOLooperProvider;
 import ioio.lib.util.android.IOIOAndroidApplicationHelper;
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;

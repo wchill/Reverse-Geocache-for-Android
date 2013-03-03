@@ -45,7 +45,7 @@ public class Passcode extends DialogFragment implements OnClickListener {
     }
 	
 	/**
-	 * Returns a new instance of this class with the given passcode..
+	 * Returns a new instance of this class with the given passcode.
 	 *
 	 * @param num a number representing the desired passcode (-1 to disable check)
 	 * @return a new instance of this class with the given passcode.
