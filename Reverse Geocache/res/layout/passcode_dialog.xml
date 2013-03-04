@@ -76,6 +76,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/one" />
 
         <Button
@@ -83,6 +84,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/two" />
 
         <Button
@@ -90,6 +92,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/three" />
     </LinearLayout>
 
@@ -107,6 +110,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/four" />
 
         <Button
@@ -114,6 +118,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/five" />
 
         <Button
@@ -121,6 +126,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/six" />
     </LinearLayout>
     
@@ -138,6 +144,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/seven" />
 
         <Button
@@ -145,6 +152,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/eight" />
 
         <Button
@@ -152,6 +160,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/nine" />
     </LinearLayout>
     
@@ -167,6 +176,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:visibility="invisible" >
         </Button>
 
@@ -175,6 +185,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:background="?android:attr/selectableItemBackground"
             android:text="@string/zero" />
 
         <ImageButton
@@ -182,6 +193,8 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="20"
+            android:layout_gravity="center"
+            android:background="?android:attr/selectableItemBackground"
             android:contentDescription="@string/delete"
             android:src="@drawable/ic_action_delete_light" />
     </LinearLayout>

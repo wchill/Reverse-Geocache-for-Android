@@ -460,7 +460,7 @@ public class ReverseGeocache extends IOIOActivity implements
 	public void onDialogPositiveClick(DialogFragment dialog, Bundle b) {
 
 		if (dialog.getTag().equals("passcode")) {
-			new Programmer().show(getFragmentManager(), "programmer");
+			showProgrammer();
 		} else if (dialog.getTag().equals("passcodePrompt")) {
 			// find the existing programming menu and set the new passcode
 			((Programmer) getFragmentManager().findFragmentByTag(
@@ -734,8 +734,7 @@ public class ReverseGeocache extends IOIOActivity implements
 	 */
 	
 	private void showProgrammer() {
-		FragmentManager fm = getFragmentManager();
-	    FragmentTransaction ft = fm.beginTransaction();
+		FragmentTransaction ft = getFragmentManager().beginTransaction();
 	    Fragment prev = getFragmentManager().findFragmentByTag("programmer");
 	    if (prev != null)
 	        ft.remove(prev);
@@ -1008,7 +1007,7 @@ public class ReverseGeocache extends IOIOActivity implements
 		private TwiMaster eeprom;
 
 		// pin assignments
-		private static final int POWER_OFF_PIN = 4;
+		private static final int POWER_OFF_PIN = 2;
 		private static final int SERVO_PIN = 3;
 		private static final int BATTERY_PIN = 41;
 

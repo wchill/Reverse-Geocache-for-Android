@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -104,69 +106,73 @@ public class Passcode extends DialogFragment implements OnClickListener {
 
 	@Override
 	public void onClick(View v) {
-		switch(v.getId()) {
-		case R.id.button_pass_zero:
-			text = text.concat("0");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_one:
-			text = text.concat("1");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_two:
-			text = text.concat("2");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_three:
-			text = text.concat("3");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_four:
-			text = text.concat("4");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_five:
-			text = text.concat("5");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_six:
-			text = text.concat("6");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_seven:
-			text = text.concat("7");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_eight:
-			text = text.concat("8");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_nine:
-			text = text.concat("9");
-			digits[text.length() - 1].setText("*");
-			break;
-		case R.id.button_pass_back:
-			if(text.length() > 0) {
-				text = text.substring(0, text.length() - 1);
-				digits[text.length()].setText("");
-			} else {
-				this.getDialog().cancel();
+		if(text.length() < 4) {
+			switch(v.getId()) {
+			case R.id.button_pass_zero:
+				text = text.concat("0");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_one:
+				text = text.concat("1");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_two:
+				text = text.concat("2");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_three:
+				text = text.concat("3");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_four:
+				text = text.concat("4");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_five:
+				text = text.concat("5");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_six:
+				text = text.concat("6");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_seven:
+				text = text.concat("7");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_eight:
+				text = text.concat("8");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_nine:
+				text = text.concat("9");
+				digits[text.length() - 1].setText("*");
+				break;
+			case R.id.button_pass_back:
+				if(text.length() > 0) {
+					text = text.substring(0, text.length() - 1);
+					digits[text.length()].setText("");
+				} else {
+					this.getDialog().cancel();
+				}
+				break;
 			}
-			break;
-		}
+		} 
 		if(text.length() == 4) {
 			if(Integer.parseInt(text.toString()) != code && code != -1) {
 				text = "";
 				Vibrator vib = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 				vib.vibrate(250);
+				Animation shake = AnimationUtils.loadAnimation(getActivity(), R.anim.shake);
+                this.getView().startAnimation(shake);
 				Toast.makeText(getActivity(), R.string.incorrect_passcode, Toast.LENGTH_SHORT).show();
 				for(EditText d : digits)
 					d.setText("");
 			} else {
 				Bundle b = new Bundle();
 				b.putInt("code", Integer.parseInt(text.toString()));
-				mListener.onDialogPositiveClick(this, b);
 				this.dismiss();
+				mListener.onDialogPositiveClick(this, b);
 			}
 		}
 	}

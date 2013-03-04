@@ -7,15 +7,21 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
+
+// TODO: implement over-the-air update functionality
 
 public class Programmer extends DialogFragment implements OnClickListener {
 	
@@ -54,6 +60,7 @@ public class Programmer extends DialogFragment implements OnClickListener {
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 	        Bundle savedInstanceState) {
+		super.onCreateView(inflater, container, savedInstanceState);
 		boxSerial = getArguments().getLong("serial", Long.MAX_VALUE);
 	    // Inflate the layout to use as dialog or embedded fragment
 		View v = inflater.inflate(R.layout.program_layout, container, false);
@@ -143,7 +150,12 @@ public class Programmer extends DialogFragment implements OnClickListener {
 					b.putInt("resetpin", Integer.parseInt(txts[5].getText().toString()));
 				if(txts[6].length() > 0)
 					b.putLong("serial", Long.parseLong(txts[6].getText().toString()));
+				InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
 				mListener.onDialogPositiveClick(this, b);
+			} else {
+				Animation shake = AnimationUtils.loadAnimation(getActivity(), R.anim.shake);
+                this.getView().startAnimation(shake);
 			}
 			break;
 		case R.id.field_reset_code:
