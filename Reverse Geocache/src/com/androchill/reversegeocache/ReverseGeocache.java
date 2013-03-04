@@ -10,31 +10,12 @@ import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOActivity;
 
-import java.io.UnsupportedEncodingException;
-import java.security.AlgorithmParameters;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.InvalidParameterSpecException;
-import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Fragment;
-import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -42,13 +23,14 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.preference.PreferenceManager;
 import android.app.DialogFragment;
 import android.content.ClipboardManager;
 import android.view.LayoutInflater;
@@ -66,11 +48,6 @@ import android.widget.Toast;
 
 public class ReverseGeocache extends IOIOActivity implements
 		OnClickListener, DialogListener {
-
-	// 64 bit key used for encrypting/decrypting update data
-	// should remain constant across all app revisions, as
-	// security isn't a huge issue for this application
-	private static final long ENC_KEY = 0x635BFCB399D050EAL;
 
 	// instance variables
 	private double batteryVoltage;
@@ -98,12 +75,12 @@ public class ReverseGeocache extends IOIOActivity implements
 	private boolean enableButton = false;
 
 	// Puzzle variables
-	private long boxSerial = Long.MAX_VALUE;
-	private int[] attempts = new int[] { 0, 1 };
-	private boolean solved = false;
-	private boolean unlocked = false;
-	private Location gpsLocation = new Location("empty"); // (0,0)
-	private int resetPin = 0; // default pin 0000
+	private long boxSerial;
+	private int[] attempts = new int[2];
+	private boolean solved;
+	private boolean unlocked;
+	private Location gpsLocation;
+	private int resetPin;
 
 	// Timers
 	private IconFlashTimer iconFlashTimer;
@@ -148,60 +125,6 @@ public class ReverseGeocache extends IOIOActivity implements
 	}
 
 	/**
-	 * Decrypts a String given a {@link SecretKey}. This method is blocking and
-	 * should not be called on the UI thread.
-	 * 
-	 * @param secret
-	 *            the SecretKey to use to decrypt
-	 * @param ciphertext
-	 *            the array containing the ciphertext
-	 * @param iv
-	 *            the array containing the initialization vectors
-	 * @return the decrypted String
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException
-	 * @throws InvalidAlgorithmParameterException
-	 */
-
-	private String decryptString(SecretKey secret, byte[] ciphertext, byte[] iv)
-			throws UnsupportedEncodingException, IllegalBlockSizeException,
-			BadPaddingException, InvalidKeyException,
-			InvalidAlgorithmParameterException, NoSuchAlgorithmException,
-			NoSuchPaddingException {
-		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		cipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
-		String plaintext = new String(cipher.doFinal(ciphertext), "UTF-8");
-		return plaintext;
-	}
-
-	/**
-	 * Creates a {@link SecretKey} given a password and a salt. This method is
-	 * blocking and should not be called on the UI thread.
-	 * 
-	 * @param password
-	 *            a char array containing a password
-	 * @param salt
-	 *            a byte array containing a salt
-	 * @return a SecretKey object containing the secret key
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeyException
-	 */
-
-	private SecretKey deriveKey(char[] password, byte[] salt)
-			throws NoSuchAlgorithmException, InvalidKeySpecException {
-		SecretKeyFactory factory = SecretKeyFactory
-				.getInstance("PBKDF2WithHmacSHA1");
-		KeySpec spec = new PBEKeySpec(password, salt, 65536, 256);
-		SecretKey tmp = factory.generateSecret(spec);
-		SecretKey secret = new SecretKeySpec(tmp.getEncoded(), "AES");
-		return secret;
-	}
-
-	/**
 	 * Enables or disables UI elements. Runs on UI thread.
 	 * 
 	 * @param enable
@@ -218,7 +141,7 @@ public class ReverseGeocache extends IOIOActivity implements
 					btImage.setImageResource(R.drawable.ic_action_bluetooth_connected);
 					btConnected = true;
 					btStatus.setText(R.string.connected);
-					connectionStatus.setText(R.string.ok);
+					changeConnectionStatus(1);
 					if (!solved)
 						attemptsStatus.setText((attempts[1] - attempts[0])
 								+ " remaining");
@@ -235,12 +158,15 @@ public class ReverseGeocache extends IOIOActivity implements
 					else
 						unlockButton.setEnabled(true);
 				} else {
-					connectionStatus.setText(R.string.unavailable);
 					batteryPercentage.setText(R.string.unavailable);
 					attemptsStatus.setText(R.string.unavailable);
 					lockStatus.setText(R.string.unavailable);
 					btStatus.setText(R.string.disconnected);
+					changeConnectionStatus(0);
 					unlockButton.setEnabled(false);
+					if(boxSerial > 0) {
+						serialText.setText(String.valueOf(boxSerial));
+					}
 					batteryBar.setVisibility(View.INVISIBLE);
 					btImage.setImageResource(R.drawable.ic_action_bluetooth);
 					lockImage.setImageResource(R.drawable.ic_action_lock);
@@ -249,38 +175,20 @@ public class ReverseGeocache extends IOIOActivity implements
 		});
 	}
 
-	/**
-	 * Encrypts a String given a {@link SecretKey}. This method is blocking and
-	 * should not be called on the UI thread.
-	 * 
-	 * @param secret
-	 *            the SecretKey to use to encrypt
-	 * @param plaintext
-	 *            the String to encrypt
-	 * @return an array containing two byte arrays containing the ciphertext and
-	 *         initialization vectors
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException
-	 * @throws InvalidParameterSpecException
-	 */
-
-	private byte[][] encryptString(SecretKey secret, String plaintext)
-			throws NoSuchAlgorithmException, NoSuchPaddingException,
-			InvalidKeyException, IllegalBlockSizeException,
-			BadPaddingException, UnsupportedEncodingException,
-			InvalidParameterSpecException {
-		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		cipher.init(Cipher.ENCRYPT_MODE, secret);
-		AlgorithmParameters params = cipher.getParameters();
-		byte[] iv = params.getParameterSpec(IvParameterSpec.class).getIV();
-		byte[] ciphertext = cipher.doFinal(plaintext.getBytes("UTF-8"));
-		return new byte[][] { ciphertext, iv };
+	private void changeConnectionStatus(final int state) {
+		switch(state) {
+		case 0:
+			connectionStatus.setText(R.string.unavailable);
+			break;
+		case 1:
+			connectionStatus.setText(R.string.ok);
+			break;
+		case 2:
+			connectionStatus.setText(R.string.busy);
+			break;
+		}
 	}
-
+	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
@@ -430,6 +338,22 @@ public class ReverseGeocache extends IOIOActivity implements
 			connectTimer.start();
 		iconFlashTimer = new IconFlashTimer(500, 500);
 		iconFlashTimer.start();
+		
+		SharedPreferences prefs = PreferenceManager
+				.getDefaultSharedPreferences(this);
+		boxSerial = prefs.getLong("serial", -1);
+		attempts[0] = prefs.getInt("attempts", -1);
+		attempts[1] = prefs.getInt("maxattempts", -1);
+		solved = prefs.getBoolean("solved", false);
+		unlocked = prefs.getBoolean("unlocked", false);
+		double lat = Double.parseDouble(prefs.getString("latitude", "0"));
+		double lng = Double.parseDouble(prefs.getString("longitude", "0"));
+		int rad = prefs.getInt("radius", 0);
+		gpsLocation = new Location("");
+		gpsLocation.setLatitude(lat);
+		gpsLocation.setLongitude(lng);
+		gpsLocation.setAccuracy(rad);
+		resetPin = prefs.getInt("resetpin", 0);
 	}
 
 	@Override
@@ -460,12 +384,14 @@ public class ReverseGeocache extends IOIOActivity implements
 	public void onDialogPositiveClick(DialogFragment dialog, Bundle b) {
 
 		if (dialog.getTag().equals("passcode")) {
+			// if we got past the first passcode screen show the programming screen
 			showProgrammer();
 		} else if (dialog.getTag().equals("passcodePrompt")) {
 			// find the existing programming menu and set the new passcode
 			((Programmer) getFragmentManager().findFragmentByTag(
 					"programmer")).setPasscode(b.getInt("code", 0));
 		} else if (dialog.getTag().equals("programmer")) {
+			// programming screen has given us data, let's process it
 			boolean save = b.getBoolean("save");
 			if (save) {
 				// create a new array the size of EEPROM so we can copy it
@@ -475,7 +401,7 @@ public class ReverseGeocache extends IOIOActivity implements
 
 				eeprom[HardwareLooper.LOCK_STATE_ADDRESS] = (byte) (b
 						.getBoolean("unlocked", false) ? 1 : 0);
-
+				
 				eeprom[HardwareLooper.SOLVE_STATE_ADDRESS] = (byte) (b
 						.getBoolean("solved", false) ? 1 : 0);
 
@@ -527,9 +453,23 @@ public class ReverseGeocache extends IOIOActivity implements
 				buf = ByteConversion.longToByteArray(l);
 				System.arraycopy(buf, 0, eeprom, HardwareLooper.SERIAL_ADDRESS,
 						buf.length);
-				new EncryptStringTask().execute(ByteConversion
-						.byteArrayToString(eeprom));
+				String data = ByteConversion.byteArrayToHexString(eeprom);
+				
+				// calculate checksum and concatenate
+				int checkSum = 0;
+				for(byte eepromByte : eeprom)
+					checkSum += eepromByte;
+				data += ":" + ByteConversion.intToHexString(checkSum);
+				
+				// copy to clipboard
+				ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+				ClipData clip = ClipData.newPlainText("update data", "UPDATE" + data);
+				clipboard.setPrimaryClip(clip);
+				Toast.makeText(ReverseGeocache.this,
+						R.string.copied_to_clipboard, Toast.LENGTH_SHORT)
+						.show();
 			} else {
+				// writing data to EEPROM
 				ProgressDialog pd = ProgressDialog.show(this,
 						"Writing data to EEPROM", "Please wait...", true);
 
@@ -576,6 +516,7 @@ public class ReverseGeocache extends IOIOActivity implements
 				} catch (NameNotFoundException e) {
 					e.printStackTrace();
 				}
+				saveData();
 				ioioCommands
 						.add(new IOIOCommand(COMMAND_UI_DISMISS_DIALOG, pd));
 			}
@@ -610,7 +551,25 @@ public class ReverseGeocache extends IOIOActivity implements
 	public void onPause() {
 		if (locationManager != null && locationListener != null)
 			locationManager.removeUpdates(locationListener);
+		saveData();
 		super.onPause();
+	}
+	
+	private void saveData() {
+		// let's cache this data for next time
+		SharedPreferences prefs = PreferenceManager
+				.getDefaultSharedPreferences(this);
+		SharedPreferences.Editor editor = prefs.edit();
+		editor.putLong("serial", boxSerial);
+		editor.putInt("attempts", attempts[0]);
+		editor.putInt("maxattempts", attempts[1]);
+		editor.putBoolean("solved", solved);
+		editor.putBoolean("unlocked", unlocked);
+		editor.putString("latitude", Double.valueOf(gpsLocation.getLatitude()).toString());
+		editor.putString("longitude", Double.valueOf(gpsLocation.getLongitude()).toString());
+		editor.putInt("radius", Float.valueOf(gpsLocation.getAccuracy()).intValue());
+		editor.putInt("resetpin", resetPin);
+		editor.commit();
 	}
 
 	@Override
@@ -762,21 +721,42 @@ public class ReverseGeocache extends IOIOActivity implements
 								InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 								imm.hideSoftInputFromWindow(
 										et.getWindowToken(), 0);
-								updateData(et.getText().toString());
+								updateData(et.getText().toString(), true);
 							}
 						}).setNegativeButton(R.string.cancel, null);
 		builder.show();
 	}
 
 	// TODO: implement updating via string
-	private void updateData(String data) {
+	private boolean updateData(String data, boolean toast) {
 		try {
-			new DecryptStringTask().execute(data);
+			data = data.substring(6);
+			String[] parts = data.split(":");
+			// get checksum from the update data
+			int checksum = ByteConversion.hexStringToInt(parts[1]);
+			// get eeprom image from data
+			byte[] eeprom = ByteConversion.hexStringToByteArray(parts[0]);
+			// get target serial from data
+			byte[] serialBytes = new byte[HardwareLooper.LONG_SIZE];
+			System.arraycopy(eeprom, HardwareLooper.SERIAL_ADDRESS, serialBytes, 0, HardwareLooper.LONG_SIZE);
+			long targetserial = ByteConversion.byteArrayToLong(serialBytes);
+			// verify that eeprom image is good - exception thrown on failure
+			int check = 0;
+			for(byte eepromByte : eeprom)
+				check += eepromByte;
+			if(checksum != check) throw new Exception("Checksum failed: " + checksum + " does not match "+ check);
+			// verify that this update data is for the right box - exception thrown on failure
+			if(targetserial != Long.MAX_VALUE && targetserial != boxSerial) throw new Exception("Target serial " + targetserial + " does not match serial "+ boxSerial);
+			// all checks passed, 
+			ioioCommands.add(new IOIOCommand(COMMAND_FLASH_DATA, eeprom));
+			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			if(toast)
 			Toast.makeText(this, "Bad update data, try again",
 					Toast.LENGTH_SHORT).show();
 		}
+		return false;
 	}
 
 	/**
@@ -887,117 +867,6 @@ public class ReverseGeocache extends IOIOActivity implements
 		}
 	}
 
-	/**
-	 * Helper class to asynchronously decrypt a String.
-	 */
-
-	class DecryptStringTask extends AsyncTask<String, Void, String> {
-		Dialog d;
-
-		@Override
-		protected String doInBackground(String... data) {
-			try {
-				SecretKey secret = deriveKey(Long.valueOf(ENC_KEY).toString()
-						.toCharArray(),
-						ByteConversion.longToByteArray(boxSerial));
-				String[] enc = data[0].split(":");
-				String plaintext = decryptString(secret,
-						ByteConversion.hexStringToByteArray(enc[0]),
-						ByteConversion.hexStringToByteArray(enc[1]));
-				return plaintext;
-			} catch (Exception e) {
-				e.printStackTrace();
-				try {
-					SecretKey secret = deriveKey(Long.valueOf(ENC_KEY)
-							.toString().toCharArray(),
-							ByteConversion.longToByteArray(UNIVERSAL_UPDATE));
-					String[] enc = data[0].split(" ");
-					String plaintext = decryptString(secret,
-							ByteConversion.hexStringToByteArray(enc[0]),
-							ByteConversion.hexStringToByteArray(enc[1]));
-					return plaintext;
-				} catch (Exception e1) {
-					e.printStackTrace();
-				}
-			}
-			return null;
-		}
-
-		@Override
-		protected void onPostExecute(String data) {
-			d.dismiss();
-			if (data != null)
-				ioioCommands.add(new IOIOCommand(COMMAND_FLASH_DATA, data));
-			else
-				Toast.makeText(ReverseGeocache.this, R.string.bad_update_data,
-						Toast.LENGTH_SHORT).show();
-		}
-
-		@Override
-		protected void onPreExecute() {
-			AlertDialog.Builder builder = new AlertDialog.Builder(
-					ReverseGeocache.this);
-			LayoutInflater inflater = ReverseGeocache.this.getLayoutInflater();
-			builder.setView(
-					inflater.inflate(R.layout.indeterminate_progress_bar, null))
-					.setTitle(R.string.converting_data).setCancelable(false);
-			d = builder.show();
-		}
-
-	}
-
-	/**
-	 * Helper class used to asynchronously encrypt a String.
-	 */
-
-	class EncryptStringTask extends AsyncTask<String, Void, String> {
-		Dialog d;
-
-		@Override
-		protected String doInBackground(String... data) {
-			try {
-				SecretKey secret = deriveKey(Long.valueOf(ENC_KEY).toString()
-						.toCharArray(),
-						ByteConversion.longToByteArray(boxSerial));
-				byte[][] senc = encryptString(secret, data[0]);
-				String encrypted = ByteConversion.byteArrayToHexString(senc[0])
-						+ ":" + ByteConversion.byteArrayToHexString(senc[1]);
-				return encrypted;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return null;
-		}
-
-		@Override
-		protected void onPostExecute(String data) {
-			d.dismiss();
-			if (data != null) {
-				ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-				ClipData clip = ClipData.newPlainText("update data", data);
-				clipboard.setPrimaryClip(clip);
-				Toast.makeText(ReverseGeocache.this,
-						R.string.copied_to_clipboard, Toast.LENGTH_SHORT)
-						.show();
-			} else {
-				Toast.makeText(ReverseGeocache.this, R.string.encrypt_failure,
-						Toast.LENGTH_SHORT).show();
-			}
-		}
-
-		@Override
-		protected void onPreExecute() {
-			AlertDialog.Builder builder = new AlertDialog.Builder(
-					ReverseGeocache.this);
-			LayoutInflater inflater = ReverseGeocache.this.getLayoutInflater();
-			builder.setView(
-					inflater.inflate(R.layout.indeterminate_progress_bar, null))
-					.setTitle(R.string.converting_data).setCancelable(false);
-			d = builder.show();
-		}
-
-	}
-
 	class HardwareLooper extends BaseIOIOLooper {
 
 		// I/O
@@ -1019,8 +888,9 @@ public class ReverseGeocache extends IOIOActivity implements
 		static final int LONG_SIZE = 8;
 
 		// EEPROM constants
-		// using a 24LC1025 but 256 put here for backwards compatibility
-		static final int EEPROM_SIZE = 256;
+		// using a 24LC1025 but 64 put here for backwards compatibility
+		// we're using less than 64 bytes of EEPROM anyway
+		static final int EEPROM_SIZE = 64;
 		static final int EEPROM_I2C_ADDRESS = 0x50;
 
 		// addresses for data in EEPROM
@@ -1035,12 +905,14 @@ public class ReverseGeocache extends IOIOActivity implements
 		static final int LONGITUDE_ADDRESS = 21;
 		static final int RADIUS_ADDRESS = 29;
 		static final int RESET_PIN_ADDRESS = 33;
+		static final int PHONE_NUMBER_ADDRESS = 35;
 
 		// Servo/PWM constants
 		// TODO: calibrate values
 		private static final int SERVO_CLOSED = 1000;
 		private static final int SERVO_OPEN = 2000;
 		private static final int PWM_FREQ = 100;
+		
 
 		/**
 		 * Called once after the HardwareLooper has been created. Sets up all
@@ -1067,7 +939,11 @@ public class ReverseGeocache extends IOIOActivity implements
 				attempts = readAttempts();
 				solved = readState();
 				resetPin = readResetPin();
-				boxSerial = readSerial();
+				long tmpSerial = readSerial();
+				if(tmpSerial != boxSerial && boxSerial != -1) {
+					Toast.makeText(ReverseGeocache.this, "These are not the puzzles you are looking for!", Toast.LENGTH_SHORT).show();
+					ioio_.disconnect();
+				}
 				unlocked = readLock();
 
 				ioioConnected = true;
@@ -1076,6 +952,14 @@ public class ReverseGeocache extends IOIOActivity implements
 				enableUi(true);
 
 				batteryTimer.start();
+				
+				SharedPreferences prefs = PreferenceManager
+						.getDefaultSharedPreferences(ReverseGeocache.this);
+				SharedPreferences.Editor editor = prefs.edit();
+				String update = prefs.getString("update", "");
+				updateData(update, false);
+				editor.putString("update", "");
+				editor.commit();
 
 			} catch (ConnectionLostException e) {
 				enableUi(false);
@@ -1110,9 +994,11 @@ public class ReverseGeocache extends IOIOActivity implements
 
 				// if the command queue is not empty, start batching commands
 				if (ioioCommands.size() > 0) {
+					changeConnectionStatus(2);
 					ioio_.beginBatch();
 					try {
 						while (ioioCommands.size() > 0) {
+							
 							IOIOCommand cmd = ioioCommands.poll();
 							int cmdNum = cmd.getCommand();
 							switch (cmdNum) {
@@ -1157,8 +1043,7 @@ public class ReverseGeocache extends IOIOActivity implements
 								break;
 							case COMMAND_FLASH_DATA:
 								// Flashes all data in byte array to EEPROM
-								byte[] b = ByteConversion
-										.hexStringToByteArray(cmd.getString());
+								byte[] b = (byte[])cmd.getObject();
 								byte[] tmp = new byte[8];
 								System.arraycopy(b, SERIAL_ADDRESS, tmp, 0,
 										LONG_SIZE);
@@ -1174,6 +1059,7 @@ public class ReverseGeocache extends IOIOActivity implements
 						}
 					} finally {
 						ioio_.endBatch();
+						changeConnectionStatus(1);
 					}
 				}
 				try {
@@ -1381,9 +1267,10 @@ public class ReverseGeocache extends IOIOActivity implements
 		 * 
 		 * @throws ConnectionLostException
 		 *             if connection is lost during write
+		 * @throws InterruptedException 
 		 */
 
-		public void reset() throws ConnectionLostException {
+		public void reset() throws ConnectionLostException, InterruptedException {
 			writeSolved(false);
 			unlock(false);
 			writeAttempts(0);
@@ -1398,9 +1285,10 @@ public class ReverseGeocache extends IOIOActivity implements
 		 *            the new unlock state
 		 * @throws ConnectionLostException
 		 *             if connection is lost during write
+		 * @throws InterruptedException 
 		 */
 
-		public void unlock(boolean unlocked) throws ConnectionLostException {
+		public void unlock(boolean unlocked) throws ConnectionLostException, InterruptedException {
 			writeEEPROM(LOCK_STATE_ADDRESS, (byte) ((unlocked) ? 1 : 0));
 			servoPwmOutput
 					.setPulseWidth((unlocked) ? SERVO_OPEN : SERVO_CLOSED);
@@ -1413,9 +1301,10 @@ public class ReverseGeocache extends IOIOActivity implements
 		 *            the new number of attempts
 		 * @throws ConnectionLostException
 		 *             if connection is lost during write
+		 * @throws InterruptedException 
 		 */
 
-		public void writeAttempts(int attempts) throws ConnectionLostException {
+		public void writeAttempts(int attempts) throws ConnectionLostException, InterruptedException {
 			writeEEPROM(ATTEMPTS_ADDRESS, (byte) attempts);
 		}
 
@@ -1428,14 +1317,15 @@ public class ReverseGeocache extends IOIOActivity implements
 		 *            the data to be written
 		 * @throws ConnectionLostException
 		 *             if connection is lost during write
+		 * @throws InterruptedException 
 		 */
 
 		public void writeEEPROM(int address, byte b)
-				throws ConnectionLostException {
+				throws ConnectionLostException, InterruptedException {
 			byte[] request = new byte[] { (byte) (address >> 8),
 					(byte) (address & 0xFF), b };
 			byte[] response = new byte[0];
-			eeprom.writeReadAsync(EEPROM_I2C_ADDRESS, false, request,
+			eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
 					request.length, response, 0);
 		}
 
@@ -1526,10 +1416,11 @@ public class ReverseGeocache extends IOIOActivity implements
 		 *            the new number of max attempts
 		 * @throws ConnectionLostException
 		 *             if connection is lost during write
+		 * @throws InterruptedException 
 		 */
 
 		public void writeMaxAttempts(int attempts)
-				throws ConnectionLostException {
+				throws ConnectionLostException, InterruptedException {
 			writeEEPROM(MAX_ATTEMPTS_ADDRESS, (byte) attempts);
 		}
 
@@ -1582,9 +1473,10 @@ public class ReverseGeocache extends IOIOActivity implements
 		 *            the new state
 		 * @throws ConnectionLostException
 		 *             if connection is lost during write
+		 * @throws InterruptedException 
 		 */
 
-		public void writeSolved(boolean solved) throws ConnectionLostException {
+		public void writeSolved(boolean solved) throws ConnectionLostException, InterruptedException {
 			writeEEPROM(SOLVE_STATE_ADDRESS, (byte) (solved ? 1 : 0));
 		}
 
@@ -1595,9 +1487,10 @@ public class ReverseGeocache extends IOIOActivity implements
 		 *            the new version code
 		 * @throws ConnectionLostException
 		 *             if connection is lost during write
+		 * @throws InterruptedException 
 		 */
 
-		public void writeVersion(int ver) throws ConnectionLostException {
+		public void writeVersion(int ver) throws ConnectionLostException, InterruptedException {
 			writeEEPROM(VERSION_ADDRESS, (byte) ver);
 		}
 	}

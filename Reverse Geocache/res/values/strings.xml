@@ -16,6 +16,7 @@
     <string name="solved">Solved</string>
 	<string name="connected">Connected</string>
 	<string name="disconnected">Disconnected</string>
+	<string name="busy">Busy</string>
     <string name="searching">Searching</string>
     <string name="unavailable">Unavailable</string>
     <string name="off">Off</string>
@@ -55,6 +56,7 @@
     <string name="converting_data">Converting data</string>
     <string name="please_wait">Please wait</string>
     <string name="serial">Serial (64-bit)</string>
+    <string name="target_serial">Target Serial (64-bit)</string>
     <string name="salt">Salt</string>
     <string name="delete">Delete</string>
     <string name="one">1</string>

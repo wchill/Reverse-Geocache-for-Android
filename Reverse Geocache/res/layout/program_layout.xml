@@ -135,7 +135,7 @@
             android:layout_weight="100"
             android:ems="10"
             android:hint="@string/serial"
-            android:inputType="number" > <requestFocus/> </EditText>
+            android:inputType="number" > </EditText>
     </LinearLayout>
 
     <LinearLayout

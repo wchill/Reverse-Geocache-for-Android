@@ -94,6 +94,7 @@ public class Programmer extends DialogFragment implements OnClickListener {
 		bws[5] = new BoundsWatcher(0, 9999, txts[5], m[5]);
 		bws[6] = new BoundsWatcher(0, Long.MAX_VALUE, txts[6], m[6]);
 		
+		if(boxSerial != -1)
 		txts[6].setText(String.valueOf(boxSerial));
 		
 		txts[5].setOnClickListener(this);
@@ -126,10 +127,6 @@ public class Programmer extends DialogFragment implements OnClickListener {
 					ok = false;
 					break;
 				}
-			}
-			if(txts[6].length() == 0) {
-				ok = false;
-				Toast.makeText(getActivity(), "Must provide a serial number", Toast.LENGTH_SHORT).show();
 			}
 			if(ok) {
 				Bundle b = new Bundle();

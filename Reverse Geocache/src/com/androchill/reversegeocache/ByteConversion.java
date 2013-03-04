@@ -152,4 +152,27 @@ public class ByteConversion {
 	    return new String(hexChars);
 	}
 	
+	public static long hexStringToLong(String str) {
+		return byteArrayToLong(hexStringToByteArray(str));
+	}
+	
+	public static int hexStringToInt(String str) {
+		return byteArrayToInt(hexStringToByteArray(str));
+	}
+	
+	public static double hexStringToDouble(String str) {
+		return byteArrayToDouble(hexStringToByteArray(str));
+	}
+	
+	public static String longToHexString(long num) {
+		return byteArrayToHexString(longToByteArray(num));
+	}
+	
+	public static String intToHexString(int num) {
+		return byteArrayToHexString(intToByteArray(num));
+	}
+	
+	public static String doubleToHexString(double num) {
+		return byteArrayToHexString(doubleToByteArray(num));
+	}
 }
