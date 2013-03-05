@@ -248,6 +248,7 @@ public class ReverseGeocache extends IOIOActivity implements
 			try {
 				ioioCommands.put(new IOIOCommand(COMMAND_WRITE_UNLOCKED, true));
 				ioioCommands.put(new IOIOCommand(COMMAND_POWER_OFF));
+				Toast.makeText(this, "Open!", Toast.LENGTH_SHORT).show();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -343,13 +344,13 @@ public class ReverseGeocache extends IOIOActivity implements
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(this);
 		boxSerial = prefs.getLong("serial", -1);
-		attempts[0] = prefs.getInt("attempts", -1);
-		attempts[1] = prefs.getInt("maxattempts", -1);
+		attempts[0] = prefs.getInt("attempts", 0);
+		attempts[1] = prefs.getInt("maxattempts", 100);
 		solved = prefs.getBoolean("solved", false);
 		unlocked = prefs.getBoolean("unlocked", false);
-		double lat = Double.parseDouble(prefs.getString("latitude", "0"));
-		double lng = Double.parseDouble(prefs.getString("longitude", "0"));
-		int rad = prefs.getInt("radius", 0);
+		double lat = Double.parseDouble(prefs.getString("latitude", "34.22247"));
+		double lng = Double.parseDouble(prefs.getString("longitude", "-118.249344"));
+		int rad = prefs.getInt("radius", 1000);
 		gpsLocation = new Location("");
 		gpsLocation.setLatitude(lat);
 		gpsLocation.setLongitude(lng);
@@ -772,7 +773,7 @@ public class ReverseGeocache extends IOIOActivity implements
 		gpsConnected = true;
 		gpsImage.setImageResource(R.drawable.ic_action_gps_locked);
 		gpsStatus.setText(R.string.locked);
-		if (loc == null) {
+		if (loc != null) {
 			if (!enableButton) {
 				// locationManager.removeUpdates(locationListener);
 				enableButton = true;
@@ -965,7 +966,7 @@ public class ReverseGeocache extends IOIOActivity implements
 					updateData(update, false);
 				editor.putString("update", "");
 				editor.commit();
-
+				
 			} catch (ConnectionLostException e) {
 				enableUi(false);
 				e.printStackTrace();
@@ -1029,7 +1030,7 @@ public class ReverseGeocache extends IOIOActivity implements
 								writeAttempts(cmd.getInt());
 								break;
 							case COMMAND_WRITE_MAX_ATTEMPTS:
-								writeAttempts(cmd.getInt());
+								writeMaxAttempts(cmd.getInt());
 								break;
 							case COMMAND_WRITE_LATITUDE:
 								writeLatitude(cmd.getDouble());
@@ -1196,8 +1197,8 @@ public class ReverseGeocache extends IOIOActivity implements
 				throws ConnectionLostException, InterruptedException {
 			byte[] request = { (byte) (address >> 8), (byte) (address & 0xFF) };
 			byte[] response = new byte[numBytes];
-			eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
-					request.length, response, response.length);
+			System.out.println(eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
+					request.length, response, response.length));
 			return response;
 		}
 
@@ -1347,7 +1348,9 @@ public class ReverseGeocache extends IOIOActivity implements
 			byte[] request = new byte[] { (byte) (address >> 8),
 					(byte) (address & 0xFF), b };
 			System.out.println("test");
-			eeprom.writeRead(0x50, false, new byte[] {0x0, 0x1, 1}, 3, null, 0);
+			byte[] tmp = new byte[1];
+			System.out.println(eeprom.writeRead(0x50, false, new byte[] {0, 0, 1}, 3, tmp, 0));
+			System.out.println("read " + tmp[0]);
 			System.out.println("writing " + b);
 			eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
 					request.length, null, 0);
@@ -1406,6 +1409,7 @@ public class ReverseGeocache extends IOIOActivity implements
 				
 			});
 			try {
+				/*
 				for (int i = 0; i < b.length; i++) {
 					System.out.println("Writing byte " + i + " of " + b.length);
 					writeEEPROM(address + i, b[i]);
@@ -1420,6 +1424,12 @@ public class ReverseGeocache extends IOIOActivity implements
 					});
 					Thread.sleep(5);
 				}
+				*/
+				byte[] request = new byte[2 + b.length];
+				request[0] = (byte) (address >> 8);
+				request[1] = (byte) (address & 0xFF);
+				System.arraycopy(b, 0, request, 2, b.length);
+				System.out.println("write: " + eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request, request.length, null, 0));
 				runOnUiThread(new Runnable() {
 
 					@Override
