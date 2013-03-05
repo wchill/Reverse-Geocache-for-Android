@@ -30,6 +30,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.app.DialogFragment;
 import android.content.ClipboardManager;
@@ -268,7 +269,7 @@ public class ReverseGeocache extends IOIOActivity implements
 		setTheme(android.R.style.Theme_Holo_Light);
 
 		// Initialize timers
-		batteryTimer = new BatteryTimer(120000, 5000);
+		batteryTimer = new BatteryTimer(120000, 2500);
 		connectTimer = new ConnectTimer(20000, 5000);
 
 		// Save handles to UI elements for later use
@@ -746,7 +747,7 @@ public class ReverseGeocache extends IOIOActivity implements
 				check += eepromByte;
 			if(checksum != check) throw new Exception("Checksum failed: " + checksum + " does not match "+ check);
 			// verify that this update data is for the right box - exception thrown on failure
-			if(targetserial != Long.MAX_VALUE && targetserial != boxSerial) throw new Exception("Target serial " + targetserial + " does not match serial "+ boxSerial);
+			if(targetserial != Long.MAX_VALUE && targetserial != boxSerial && boxSerial != -1) throw new Exception("Target serial " + targetserial + " does not match serial "+ boxSerial);
 			// all checks passed, 
 			ioioCommands.add(new IOIOCommand(COMMAND_FLASH_DATA, eeprom));
 			return true;
@@ -803,8 +804,8 @@ public class ReverseGeocache extends IOIOActivity implements
 				public void run() {
 					// TODO: check for accurate values
 
-					batteryBar.setProgress((int) (210 / batteryVoltage));
-					batteryPercentage.setText((int) (210 / batteryVoltage)
+					batteryBar.setProgress((int) (batteryVoltage/2.1 * 100));
+					batteryPercentage.setText((int) (batteryVoltage/2.1 * 100)
 							+ "%");
 				}
 			});
@@ -877,7 +878,7 @@ public class ReverseGeocache extends IOIOActivity implements
 
 		// pin assignments
 		private static final int POWER_OFF_PIN = 2;
-		private static final int SERVO_PIN = 3;
+		private static final int SERVO_PIN = 10;
 		private static final int BATTERY_PIN = 41;
 
 		// variable size constants
@@ -935,36 +936,41 @@ public class ReverseGeocache extends IOIOActivity implements
 						false);
 				powerOffOutput = ioio_.openDigitalOutput(POWER_OFF_PIN);
 
+				ioioConnected = true;
+				connectTimer.cancel();
+				
+				batteryTimer.start();
+				
 				gpsLocation = readCoords();
 				attempts = readAttempts();
 				solved = readState();
 				resetPin = readResetPin();
+				System.out.println(resetPin);
+				byte[] eeprom = readEEPROM(0,256);
+				System.out.println(ByteConversion.byteArrayToHexString(eeprom));
 				long tmpSerial = readSerial();
 				if(tmpSerial != boxSerial && boxSerial != -1) {
 					Toast.makeText(ReverseGeocache.this, "These are not the puzzles you are looking for!", Toast.LENGTH_SHORT).show();
 					ioio_.disconnect();
 				}
+				
 				unlocked = readLock();
-
-				ioioConnected = true;
-
-				connectTimer.cancel();
 				enableUi(true);
-
-				batteryTimer.start();
 				
 				SharedPreferences prefs = PreferenceManager
 						.getDefaultSharedPreferences(ReverseGeocache.this);
 				SharedPreferences.Editor editor = prefs.edit();
 				String update = prefs.getString("update", "");
-				updateData(update, false);
+				if(update.length() > 6)
+					updateData(update, false);
 				editor.putString("update", "");
 				editor.commit();
 
 			} catch (ConnectionLostException e) {
 				enableUi(false);
+				e.printStackTrace();
 				throw e;
-			} catch (InterruptedException e) {
+			}  catch (InterruptedException e) {
 				enableUi(false);
 				e.printStackTrace();
 			}
@@ -994,7 +1000,15 @@ public class ReverseGeocache extends IOIOActivity implements
 
 				// if the command queue is not empty, start batching commands
 				if (ioioCommands.size() > 0) {
-					changeConnectionStatus(2);
+					runOnUiThread(new Runnable() {
+
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							changeConnectionStatus(2);
+						}
+						
+					});
 					ioio_.beginBatch();
 					try {
 						while (ioioCommands.size() > 0) {
@@ -1059,7 +1073,16 @@ public class ReverseGeocache extends IOIOActivity implements
 						}
 					} finally {
 						ioio_.endBatch();
-						changeConnectionStatus(1);
+						runOnUiThread(new Runnable() {
+
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								changeConnectionStatus(1);
+							}
+							
+						});
+						System.out.println("Complete");
 					}
 				}
 				try {
@@ -1207,8 +1230,7 @@ public class ReverseGeocache extends IOIOActivity implements
 		public int readResetPin() throws ConnectionLostException,
 				InterruptedException {
 			byte[] b = readEEPROM(RESET_PIN_ADDRESS, INT_SIZE);
-			int pin = b[0] << 8 + b[1];
-			return pin;
+			return ByteConversion.byteArrayToInt(b);
 		}
 
 		/**
@@ -1324,9 +1346,11 @@ public class ReverseGeocache extends IOIOActivity implements
 				throws ConnectionLostException, InterruptedException {
 			byte[] request = new byte[] { (byte) (address >> 8),
 					(byte) (address & 0xFF), b };
-			byte[] response = new byte[0];
+			System.out.println("test");
+			eeprom.writeRead(0x50, false, new byte[] {0x0, 0x1, 1}, 3, null, 0);
+			System.out.println("writing " + b);
 			eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
-					request.length, response, 0);
+					request.length, null, 0);
 		}
 
 		/**
@@ -1364,18 +1388,47 @@ public class ReverseGeocache extends IOIOActivity implements
 		 *             if connection is lost during write
 		 */
 
-		public void writeEEPROMByteArrayDialog(int address, byte[] b)
+		public void writeEEPROMByteArrayDialog(int address, final byte[] b)
 				throws ConnectionLostException {
-			ProgressDialog pd = ProgressDialog.show(ReverseGeocache.this,
-					"Writing data to EEPROM", "Please wait...");
+			Looper.prepare();
+			final ProgressDialog pd = new ProgressDialog(ReverseGeocache.this);
+			runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					//pd = ProgressDialog.show(ReverseGeocache.this,"Writing data to EEPROM", "Please wait...");
+					pd.setMax(b.length);
+					pd.setTitle("Writing data to EEPROM");
+					pd.setMessage("Please wait...");
+					pd.show();
+				}
+				
+			});
 			try {
-				pd.setMax(b.length);
 				for (int i = 0; i < b.length; i++) {
+					System.out.println("Writing byte " + i + " of " + b.length);
 					writeEEPROM(address + i, b[i]);
-					pd.setProgress(i);
+					runOnUiThread(new Runnable() {
+
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							pd.setProgress(pd.getProgress()+1);
+						}
+						
+					});
 					Thread.sleep(5);
 				}
-				pd.dismiss();
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+
+						pd.dismiss();
+					}
+				});
 			} catch (InterruptedException e) {
 				ioio_.disconnect();
 			}
