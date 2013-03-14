@@ -872,13 +872,11 @@ public class ReverseGeocache extends IOIOActivity implements
 
 		// I/O
 		private AnalogInput battery;
-		private DigitalOutput powerOffOutput;
 		private PwmOutput servoPwmOutput;
 		private TwiMaster eeprom;
 
 		// pin assignments
-		private static final int POWER_OFF_PIN = 2;
-		private static final int SERVO_PIN = 10;
+		private static final int SERVO_PIN = 6;
 		private static final int BATTERY_PIN = 41;
 
 		// variable size constants
@@ -934,7 +932,6 @@ public class ReverseGeocache extends IOIOActivity implements
 				battery = ioio_.openAnalogInput(BATTERY_PIN);
 				eeprom = ioio_.openTwiMaster(0, TwiMaster.Rate.RATE_100KHz,
 						false);
-				powerOffOutput = ioio_.openDigitalOutput(POWER_OFF_PIN);
 				connectTimer.cancel();
 				batteryTimer.start();
 				ioioConnected = true;
@@ -1048,9 +1045,6 @@ public class ReverseGeocache extends IOIOActivity implements
 							case COMMAND_RESET:
 								reset();
 								break;
-							case COMMAND_POWER_OFF:
-								powerOff();
-								break;
 							case COMMAND_UI_DISMISS_DIALOG:
 								Dialog d = (Dialog) cmd.getObject();
 								d.dismiss();
@@ -1097,18 +1091,6 @@ public class ReverseGeocache extends IOIOActivity implements
 			} catch (ConnectionLostException e) {
 				enableUi(false);
 				throw e;
-			}
-		}
-
-		/**
-		 * Powers off the IOIO using the Pololu switch.
-		 */
-
-		public void powerOff() {
-			try {
-				powerOffOutput.write(true);
-			} catch (ConnectionLostException e) {
-				e.printStackTrace();
 			}
 		}
 
@@ -1354,14 +1336,8 @@ public class ReverseGeocache extends IOIOActivity implements
 				throws ConnectionLostException, InterruptedException {
 			byte[] request = new byte[] { (byte) (address >> 8),
 					(byte) (address & 0xFF), b };
-			System.out.println("test");
-			byte[] tmp = new byte[1];
-//			System.out.println(eeprom.writeRead(0x50, false, new byte[] {0, 0, 1}, 3, tmp, 0));
-//			System.out.println("read " + tmp[0]);
-//			System.out.println("writing " + b);
 			eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
-					request.length, tmp, 0);
-			System.out.println("success");
+					request.length, null, 0);
 		}
 
 		/**
@@ -1406,15 +1382,12 @@ public class ReverseGeocache extends IOIOActivity implements
 				request[0] = (byte) (address >> 8);
 				request[1] = (byte) (address & 0xFF);
 				System.arraycopy(b, 0, request, 2, b.length);
-				System.out.println("write: " + eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request, request.length, null, 0));
+				eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request, request.length, null, 0);
 				runOnUiThread(new Runnable() {
-
 					@Override
 					public void run() {
-						// TODO Auto-generated method stub
 						Toast.makeText(ReverseGeocache.this, "Update successful!", Toast.LENGTH_SHORT).show();
 					}
-					
 				});
 			} catch (InterruptedException e) {
 				ioio_.disconnect();
