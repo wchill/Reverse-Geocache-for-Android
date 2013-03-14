@@ -910,7 +910,7 @@ public class ReverseGeocache extends IOIOActivity implements
 
 		// Servo/PWM constants
 		// TODO: calibrate values
-		private static final int SERVO_CLOSED = 1000;
+		private static final int SERVO_CLOSED = 700;
 		private static final int SERVO_OPEN = 2000;
 		private static final int PWM_FREQ = 100;
 		
@@ -1194,10 +1194,18 @@ public class ReverseGeocache extends IOIOActivity implements
 
 		public byte[] readEEPROM(int address, int numBytes)
 				throws ConnectionLostException, InterruptedException {
-			byte[] request = { (byte) (address >> 8), (byte) (address & 0xFF) };
 			byte[] response = new byte[numBytes];
-			eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
-					request.length, response, response.length);
+			
+			// Note that IOIO only supports up to 127 byte reads in one I2C transaction, so we need to break up any reads longer than that
+			for(int i = 0; i <= numBytes/127; i++) {
+				int currAddr = address + i * 127;
+				byte[] request = { (byte) (currAddr >> 8), (byte) (currAddr & 0xFF) };
+				// If we're on the final read, then read numBytes mod 127 else read 127 bytes
+				byte[] respBuf = new byte[(i == numBytes/127)?numBytes%127:127];
+				eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
+						request.length, respBuf, respBuf.length);
+				System.arraycopy(respBuf, 0, response, i*127, respBuf.length);
+			}
 			return response;
 		}
 
