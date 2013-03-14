@@ -98,22 +98,6 @@ public class ReverseGeocache extends IOIOActivity implements
 
 	// constants
 	static final long UNIVERSAL_UPDATE = Long.MAX_VALUE;
-	
-	// IOIO commands
-	private static final int COMMAND_WRITE_SOLVED = 0;
-	private static final int COMMAND_WRITE_UNLOCKED = 1;
-	private static final int COMMAND_WRITE_ATTEMPTS = 2;
-	private static final int COMMAND_WRITE_MAX_ATTEMPTS = 3;
-	private static final int COMMAND_WRITE_LATITUDE = 4;
-	private static final int COMMAND_WRITE_LONGITUDE = 5;
-	private static final int COMMAND_WRITE_RADIUS = 6;
-	private static final int COMMAND_WRITE_RESET_PIN = 7;
-	private static final int COMMAND_WRITE_VERSION = 8;
-	private static final int COMMAND_RESET = 9;
-	private static final int COMMAND_POWER_OFF = 10;
-	private static final int COMMAND_UI_DISMISS_DIALOG = 11;
-	private static final int COMMAND_WRITE_SERIAL = 12;
-	private static final int COMMAND_FLASH_DATA = 13;
 
 	// Enable request code constants
 	private static final int REQUEST_ENABLE_BT = 1;
@@ -228,12 +212,11 @@ public class ReverseGeocache extends IOIOActivity implements
 				solved = true;
 				try {
 					ioioCommands
-							.put(new IOIOCommand(COMMAND_WRITE_SOLVED, true));
-					ioioCommands.put(new IOIOCommand(COMMAND_WRITE_ATTEMPTS,
+							.put(new IOIOCommand(IOIOCommand.WRITE_SOLVED, true));
+					ioioCommands.put(new IOIOCommand(IOIOCommand.WRITE_ATTEMPTS,
 							attempts[0]));
-					ioioCommands.put(new IOIOCommand(COMMAND_WRITE_UNLOCKED,
+					ioioCommands.put(new IOIOCommand(IOIOCommand.WRITE_UNLOCKED,
 							true));
-					ioioCommands.put(new IOIOCommand(COMMAND_POWER_OFF));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -245,8 +228,7 @@ public class ReverseGeocache extends IOIOActivity implements
 			// somehow the box was locked but the puzzle
 			// was already solved, so unlock box again
 			try {
-				ioioCommands.put(new IOIOCommand(COMMAND_WRITE_UNLOCKED, true));
-				ioioCommands.put(new IOIOCommand(COMMAND_POWER_OFF));
+				ioioCommands.put(new IOIOCommand(IOIOCommand.WRITE_UNLOCKED, true));
 				Toast.makeText(this, "Open!", Toast.LENGTH_SHORT).show();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -369,11 +351,6 @@ public class ReverseGeocache extends IOIOActivity implements
 		connectTimer.cancel();
 		batteryTimer.cancel();
 		iconFlashTimer.cancel();
-		try {
-			ioioCommands.put(new IOIOCommand(COMMAND_POWER_OFF));
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		super.onDestroy();
 	}
 
@@ -474,44 +451,44 @@ public class ReverseGeocache extends IOIOActivity implements
 				ProgressDialog pd = ProgressDialog.show(this,
 						"Writing data to EEPROM", "Please wait...", true);
 
-				ioioCommands.add(new IOIOCommand(COMMAND_WRITE_UNLOCKED, b
+				ioioCommands.add(new IOIOCommand(IOIOCommand.WRITE_UNLOCKED, b
 						.getBoolean("unlocked", false)));
 
-				ioioCommands.add(new IOIOCommand(COMMAND_WRITE_SOLVED, b
+				ioioCommands.add(new IOIOCommand(IOIOCommand.WRITE_SOLVED, b
 						.getBoolean("solved", false)));
 
 				int tmp = b.getInt("attempts", -1);
 				if (tmp != -1)
-					ioioCommands.add(new IOIOCommand(COMMAND_WRITE_ATTEMPTS,
+					ioioCommands.add(new IOIOCommand(IOIOCommand.WRITE_ATTEMPTS,
 							tmp));
 
 				tmp = b.getInt("maxattempts", -1);
 				if (tmp != -1)
 					ioioCommands.add(new IOIOCommand(
-							COMMAND_WRITE_MAX_ATTEMPTS, tmp));
+							IOIOCommand.WRITE_MAX_ATTEMPTS, tmp));
 
 				tmp = b.getInt("radius", -1);
 				if (tmp != -1)
 					ioioCommands
-							.add(new IOIOCommand(COMMAND_WRITE_RADIUS, tmp));
+							.add(new IOIOCommand(IOIOCommand.WRITE_RADIUS, tmp));
 
 				tmp = b.getInt("resetpin", -1);
 				if (tmp != -1)
-					ioioCommands.add(new IOIOCommand(COMMAND_WRITE_RESET_PIN,
+					ioioCommands.add(new IOIOCommand(IOIOCommand.WRITE_RESET_PIN,
 							tmp));
 
 				double d = b.getDouble("latitude", Double.NaN);
 				if (d != Double.NaN)
 					ioioCommands
-							.add(new IOIOCommand(COMMAND_WRITE_LATITUDE, d));
+							.add(new IOIOCommand(IOIOCommand.WRITE_LATITUDE, d));
 
 				d = b.getDouble("longitude", Double.NaN);
 				if (d != Double.NaN)
 					ioioCommands
-							.add(new IOIOCommand(COMMAND_WRITE_LONGITUDE, d));
+							.add(new IOIOCommand(IOIOCommand.WRITE_LONGITUDE, d));
 
 				try {
-					ioioCommands.add(new IOIOCommand(COMMAND_WRITE_VERSION,
+					ioioCommands.add(new IOIOCommand(IOIOCommand.WRITE_VERSION,
 							getPackageManager().getPackageInfo(
 									getPackageName(), 0).versionCode));
 				} catch (NameNotFoundException e) {
@@ -519,7 +496,7 @@ public class ReverseGeocache extends IOIOActivity implements
 				}
 				saveData();
 				ioioCommands
-						.add(new IOIOCommand(COMMAND_UI_DISMISS_DIALOG, pd));
+						.add(new IOIOCommand(IOIOCommand.UI_DISMISS_DIALOG, pd));
 			}
 			dialog.dismiss();
 		}
@@ -749,7 +726,7 @@ public class ReverseGeocache extends IOIOActivity implements
 			// verify that this update data is for the right box - exception thrown on failure
 			if(targetserial != Long.MAX_VALUE && targetserial != boxSerial && boxSerial != -1) throw new Exception("Target serial " + targetserial + " does not match serial "+ boxSerial);
 			// all checks passed, 
-			ioioCommands.add(new IOIOCommand(COMMAND_FLASH_DATA, eeprom));
+			ioioCommands.add(new IOIOCommand(IOIOCommand.FLASH_DATA, eeprom));
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -802,8 +779,6 @@ public class ReverseGeocache extends IOIOActivity implements
 		public void onTick(long millisUntilFinished) {
 			runOnUiThread(new Runnable() {
 				public void run() {
-					// TODO: check for accurate values
-
 					batteryBar.setProgress(Math.max(0, Math.min((int) (167 * (batteryVoltage-1.5)), 100)));
 					batteryPercentage.setText(Math.max(0, Math.min((int) (167 * (batteryVoltage-1.5)), 100))
 							+ "%");
@@ -907,7 +882,6 @@ public class ReverseGeocache extends IOIOActivity implements
 		static final int PHONE_NUMBER_ADDRESS = 35;
 
 		// Servo/PWM constants
-		// TODO: calibrate values
 		private static final int SERVO_CLOSED = 700;
 		private static final int SERVO_OPEN = 2000;
 		private static final int PWM_FREQ = 100;
@@ -997,86 +971,63 @@ public class ReverseGeocache extends IOIOActivity implements
 
 				// if the command queue is not empty, start batching commands
 				if (ioioCommands.size() > 0) {
-					runOnUiThread(new Runnable() {
-
-						@Override
-						public void run() {
-							// TODO Auto-generated method stub
-							changeConnectionStatus(2);
-						}
+					
+					while (ioioCommands.size() > 0) {
 						
-					});
-					//ioio_.beginBatch();
-					try {
-						while (ioioCommands.size() > 0) {
-							
-							IOIOCommand cmd = ioioCommands.poll();
-							int cmdNum = cmd.getCommand();
-							switch (cmdNum) {
-							case COMMAND_WRITE_SERIAL:
-								writeSerial(cmd.getLong());
-								break;
-							case COMMAND_WRITE_SOLVED:
-								writeSolved(cmd.getBoolean());
-								break;
-							case COMMAND_WRITE_UNLOCKED:
-								unlock(cmd.getBoolean());
-								break;
-							case COMMAND_WRITE_ATTEMPTS:
-								writeAttempts(cmd.getInt());
-								break;
-							case COMMAND_WRITE_MAX_ATTEMPTS:
-								writeMaxAttempts(cmd.getInt());
-								break;
-							case COMMAND_WRITE_LATITUDE:
-								writeLatitude(cmd.getDouble());
-								break;
-							case COMMAND_WRITE_LONGITUDE:
-								writeLongitude(cmd.getDouble());
-								break;
-							case COMMAND_WRITE_RADIUS:
-								writeRadius(cmd.getInt());
-								break;
-							case COMMAND_WRITE_RESET_PIN:
-								writeResetPin(cmd.getInt());
-								break;
-							case COMMAND_WRITE_VERSION:
-								writeVersion(cmd.getInt());
-							case COMMAND_RESET:
-								reset();
-								break;
-							case COMMAND_UI_DISMISS_DIALOG:
-								Dialog d = (Dialog) cmd.getObject();
-								d.dismiss();
-								break;
-							case COMMAND_FLASH_DATA:
-								// Flashes all data in byte array to EEPROM
-								byte[] b = (byte[])cmd.getObject();
-								byte[] tmp = new byte[8];
-								System.arraycopy(b, SERIAL_ADDRESS, tmp, 0,
+						IOIOCommand cmd = ioioCommands.poll();
+						int cmdNum = cmd.getCommand();
+						switch (cmdNum) {
+						case IOIOCommand.WRITE_SERIAL:
+							writeSerial(cmd.getLong());
+							break;
+						case IOIOCommand.WRITE_SOLVED:
+							writeSolved(cmd.getBoolean());
+							break;
+						case IOIOCommand.WRITE_UNLOCKED:
+							unlock(cmd.getBoolean());
+							break;
+						case IOIOCommand.WRITE_ATTEMPTS:
+							writeAttempts(cmd.getInt());
+							break;
+						case IOIOCommand.WRITE_MAX_ATTEMPTS:
+							writeMaxAttempts(cmd.getInt());
+							break;
+						case IOIOCommand.WRITE_LATITUDE:
+							writeLatitude(cmd.getDouble());
+							break;
+						case IOIOCommand.WRITE_LONGITUDE:
+							writeLongitude(cmd.getDouble());
+							break;
+						case IOIOCommand.WRITE_RADIUS:
+							writeRadius(cmd.getInt());
+							break;
+						case IOIOCommand.WRITE_RESET_PIN:
+							writeResetPin(cmd.getInt());
+							break;
+						case IOIOCommand.WRITE_VERSION:
+							writeVersion(cmd.getInt());
+						case IOIOCommand.RESET:
+							reset();
+							break;
+						case IOIOCommand.UI_DISMISS_DIALOG:
+							Dialog d = (Dialog) cmd.getObject();
+							d.dismiss();
+							break;
+						case IOIOCommand.FLASH_DATA:
+							// Flashes all data in byte array to EEPROM
+							byte[] b = (byte[])cmd.getObject();
+							byte[] tmp = new byte[8];
+							System.arraycopy(b, SERIAL_ADDRESS, tmp, 0,
+									LONG_SIZE);
+							if (ByteConversion.byteArrayToLong(tmp) == -1) {
+								tmp = ByteConversion
+										.longToByteArray(readSerial());
+								System.arraycopy(tmp, 0, b, SERIAL_ADDRESS,
 										LONG_SIZE);
-								if (ByteConversion.byteArrayToLong(tmp) == -1) {
-									tmp = ByteConversion
-											.longToByteArray(readSerial());
-									System.arraycopy(tmp, 0, b, SERIAL_ADDRESS,
-											LONG_SIZE);
-								}
-								writeEEPROMByteArrayDialog(START_ADDRESS, b);
-								break;
 							}
+							writeEEPROMByteArrayDialog(START_ADDRESS, b);
+							break;
 						}
-					} finally {
-						//ioio_.endBatch();
-						runOnUiThread(new Runnable() {
-
-							@Override
-							public void run() {
-								// TODO Auto-generated method stub
-								changeConnectionStatus(1);
-							}
-							
-						});
-						System.out.println("Complete");
 					}
 				}
 				try {
@@ -1336,8 +1287,14 @@ public class ReverseGeocache extends IOIOActivity implements
 				throws ConnectionLostException, InterruptedException {
 			byte[] request = new byte[] { (byte) (address >> 8),
 					(byte) (address & 0xFF), b };
+			System.out.println("test");
+			byte[] tmp = new byte[1];
+//			System.out.println(eeprom.writeRead(0x50, false, new byte[] {0, 0, 1}, 3, tmp, 0));
+//			System.out.println("read " + tmp[0]);
+//			System.out.println("writing " + b);
 			eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
-					request.length, null, 0);
+					request.length, tmp, 0);
+			System.out.println("success");
 		}
 
 		/**

@@ -5,6 +5,21 @@ public class IOIOCommand {
 	private Object arg;
 	private int command;
 	
+	// IOIO commands
+	public static final int WRITE_SOLVED = 0;
+	public static final int WRITE_UNLOCKED = 1;
+	public static final int WRITE_ATTEMPTS = 2;
+	public static final int WRITE_MAX_ATTEMPTS = 3;
+	public static final int WRITE_LATITUDE = 4;
+	public static final int WRITE_LONGITUDE = 5;
+	public static final int WRITE_RADIUS = 6;
+	public static final int WRITE_RESET_PIN = 7;
+	public static final int WRITE_VERSION = 8;
+	public static final int RESET = 9;
+	public static final int UI_DISMISS_DIALOG = 10;
+	public static final int WRITE_SERIAL = 11;
+	public static final int FLASH_DATA = 12;
+	
 	/**
 	 * Constructor to use when wrapping an IOIO command with an argument.
 	 *
