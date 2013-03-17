@@ -12,44 +12,8 @@ This app is designed to perform the following tasks:
 Note that the reverse geocache can be repurposed for other uses: eg. a safe.
 This is merely one relevant application of my reverse geocache design.
 
-The following parts are needed:
--IOIO Mint or equivalent solution
--Servo
--Locking mechanism
--Momentary push button with LED
--Pololu push button power switch
--External 24LC256 EEPROM or equivalent I2C replacement
--0.1uF decoupling capacitors
--10k ohm resistor
--Wall-mount USB A + B ports (optional, but nice to have)
--JST-PH battery extension cable (https://www.adafruit.com/products/1131)
--Wire, solder, etc.
--Android phone running Android 4.0 or higher (older phones can use CyanogenMod,
- check forum.xda-developers.com and search for the device for more details)
-
-I recommend IOIO Mint (https://www.adafruit.com/products/885) for a
-self-contained solution that has an IOIO board, Bluetooth dongle and USB port,
-500mAh LiPo battery and integrated charger as well as a way to measure battery
-voltage easily.
-
-Assembly instructions assume an IOIO Mint is being used.
-
-To assemble:
--Connect the servo to pin 3/SERVO_PIN on IOIO and wire to power/0v and mount.
--Connect the Pololu OFF control pin to pin 2/POWER_OFF_PIN on IOIO.
--Wire up the momentary push button to the Pololu switch and mount.
--Connect push button LED pins to Pololu Vout/GND.
--Wire the Pololu switch GND pin to IOIO GND.
--Cut one wire on the JST-PH cable and wire the ends to Vin/Vout on Pololu.
--Connect the JST-PH cable to IOIO and LiPo battery.
--Connect the 10k ohm resistor to Vout on Pololu and GND.
--Connect EEPROM pins 1-4 to GND and pin 5 to 3.3V on IOIO.
--Connect EEPROM pin 7 to IOIO pin 48 and EEPROM pin 8 to IOIO pin 47.
--Place 0.1uF capacitor on EEPROM pin 4-5.
--Use 10k resistors to pull up EEPROM pin 7 and 8 to 3.3V on IOIO.
--Mount USB A/B ports and connect to IOIO. Insert Bluetooth dongle if desired.
--Mount locking mechanism inside box and attach to servo.
--Close box, power on and use app to program.
+Build instructions for the reverse geocache are here:
+http://www.instructables.com/id/The-Reverse-Andycache-Android-powered-reverse-geo/
 
 Note that with this design, the battery will not charge unless the push button
 is used to power on. This is in the interest of keeping the IOIO Mint intact.
