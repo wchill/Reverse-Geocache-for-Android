@@ -196,7 +196,7 @@
             android:layout_gravity="center"
             android:background="?android:attr/selectableItemBackground"
             android:contentDescription="@string/delete"
-            android:src="@drawable/ic_action_delete_dark" />
+            android:src="@drawable/ic_action_delete_light" />
     </LinearLayout>
 
 

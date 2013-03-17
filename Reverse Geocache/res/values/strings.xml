@@ -22,8 +22,6 @@
     <string name="off">Off</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
-    <string name="mock_locations_disallowed">Mock locations disallowed</string>
-    <string name="prompt_disable_mock_locations">Please disable mock locations in Development Settings.</string>
     <string name="gps_disabled">GPS is disabled</string>
     <string name="gps_enable_prompt">Would you like to enable GPS?</string>
     <string name="bt_disabled">Bluetooth is disabled</string>
