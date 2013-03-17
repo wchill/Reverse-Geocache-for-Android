@@ -23,14 +23,13 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.app.DialogFragment;
 import android.content.ClipboardManager;
 import android.view.LayoutInflater;
@@ -51,6 +50,8 @@ public class ReverseGeocache extends IOIOActivity implements
 
 	// instance variables
 	private double batteryVoltage;
+	private double[] pastBatteryVoltage = new double[10];
+	private int numVoltageMeasurements = 0;
 	private boolean ioioConnected = false;
 
 	// UI elements
@@ -72,7 +73,6 @@ public class ReverseGeocache extends IOIOActivity implements
 	private boolean gpsConnected = false;
 	private boolean gpsIconState = false;
 	private boolean gpsDisabled = true;
-	private boolean enableButton = false;
 
 	// Puzzle variables
 	private long boxSerial;
@@ -119,7 +119,6 @@ public class ReverseGeocache extends IOIOActivity implements
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				// TODO: double check viability
 				if (enable) {
 					batteryBar.setVisibility(View.VISIBLE);
 					btImage.setImageResource(R.drawable.ic_action_bluetooth_connected);
@@ -137,9 +136,7 @@ public class ReverseGeocache extends IOIOActivity implements
 							.setImageResource((unlocked ? R.drawable.ic_action_unlock
 									: R.drawable.ic_action_lock));
 					serialText.setText(String.valueOf(boxSerial));
-					if (!enableButton)
-						enableButton = true;
-					else
+					if (currentLocation != null && ioioConnected)
 						unlockButton.setEnabled(true);
 				} else {
 					batteryPercentage.setText(R.string.unavailable);
@@ -204,6 +201,11 @@ public class ReverseGeocache extends IOIOActivity implements
 		if (attempts[0] < attempts[1] && !solved) {
 			attempts[0]++;
 			attemptsStatus.setText((attempts[1] - attempts[0]) + " remaining");
+			try {
+				ioioCommands.put(new IOIOCommand(IOIOCommand.WRITE_ATTEMPTS, attempts[0]));
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
 
 			// check distance between current and target location
 			// if less than desired radius, unlock box and mark solved
@@ -220,9 +222,14 @@ public class ReverseGeocache extends IOIOActivity implements
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+				lockStatus.setText(R.string.unlocked);
 			} else {
-				Toast.makeText(this, "Distance: " + dist + "km",
+				if(dist > 10000)
+					Toast.makeText(this, "Distance: " + dist/1000 + "km",
 						Toast.LENGTH_SHORT).show();
+				else
+					Toast.makeText(this, "Distance: " + dist + "m",
+							Toast.LENGTH_SHORT).show();
 			}
 		} else if (solved) {
 			// somehow the box was locked but the puzzle
@@ -244,14 +251,14 @@ public class ReverseGeocache extends IOIOActivity implements
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-
+		super.onCreate(savedInstanceState);			       
+		
 		// Set the layout and theme of activity
 		setContentView(R.layout.activity_reverse_geocache);
-		setTheme(android.R.style.Theme_Holo_Light);
+		setTheme(android.R.style.Theme_Holo);
 
 		// Initialize timers
-		batteryTimer = new BatteryTimer(120000, 2500);
+		batteryTimer = new BatteryTimer(10000, 2500);
 		connectTimer = new ConnectTimer(20000, 5000);
 
 		// Save handles to UI elements for later use
@@ -272,6 +279,22 @@ public class ReverseGeocache extends IOIOActivity implements
 		gpsImage = (ImageView) findViewById(R.id.gps_status_icon);
 		lockImage = (ImageView) findViewById(R.id.lock_status_icon);
 
+		if (!Settings.Secure.getString(getContentResolver(),
+			       Settings.Secure.ALLOW_MOCK_LOCATION).equals("0")) {
+			AlertDialog.Builder builder = new AlertDialog.Builder(this,
+					AlertDialog.THEME_HOLO_DARK);
+			builder.setTitle(R.string.mock_locations_disallowed)
+					.setMessage(R.string.prompt_disable_mock_locations)
+					.setPositiveButton(R.string.ok,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int id) {
+									ReverseGeocache.this.finish();
+								}
+							});
+			AlertDialog dialog = builder.create();
+			dialog.show();
+		}
+		
 		// Enable Bluetooth
 		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter
 				.getDefaultAdapter();
@@ -301,16 +324,11 @@ public class ReverseGeocache extends IOIOActivity implements
 				updateLocation(location);
 			}
 
-			public void onProviderDisabled(String provider) {
-			}
-
-			public void onProviderEnabled(String provider) {
-			}
-
 			// unused
+			public void onProviderDisabled(String provider) {}
+			public void onProviderEnabled(String provider) {}
 			public void onStatusChanged(String provider, int status,
-					Bundle extras) {
-			}
+					Bundle extras) {}
 		};
 
 		// Register the listener with the Location Manager to receive location
@@ -321,22 +339,6 @@ public class ReverseGeocache extends IOIOActivity implements
 			connectTimer.start();
 		iconFlashTimer = new IconFlashTimer(500, 500);
 		iconFlashTimer.start();
-		
-		SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(this);
-		boxSerial = prefs.getLong("serial", -1);
-		attempts[0] = prefs.getInt("attempts", 0);
-		attempts[1] = prefs.getInt("maxattempts", 100);
-		solved = prefs.getBoolean("solved", false);
-		unlocked = prefs.getBoolean("unlocked", false);
-		double lat = Double.parseDouble(prefs.getString("latitude", "34.22247"));
-		double lng = Double.parseDouble(prefs.getString("longitude", "-118.249344"));
-		int rad = prefs.getInt("radius", 1000);
-		gpsLocation = new Location("");
-		gpsLocation.setLatitude(lat);
-		gpsLocation.setLongitude(lng);
-		gpsLocation.setAccuracy(rad);
-		resetPin = prefs.getInt("resetpin", 0);
 	}
 
 	@Override
@@ -494,7 +496,6 @@ public class ReverseGeocache extends IOIOActivity implements
 				} catch (NameNotFoundException e) {
 					e.printStackTrace();
 				}
-				saveData();
 				ioioCommands
 						.add(new IOIOCommand(IOIOCommand.UI_DISMISS_DIALOG, pd));
 			}
@@ -529,32 +530,14 @@ public class ReverseGeocache extends IOIOActivity implements
 	public void onPause() {
 		if (locationManager != null && locationListener != null)
 			locationManager.removeUpdates(locationListener);
-		saveData();
+		this.finish();
 		super.onPause();
-	}
-	
-	private void saveData() {
-		// let's cache this data for next time
-		SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(this);
-		SharedPreferences.Editor editor = prefs.edit();
-		editor.putLong("serial", boxSerial);
-		editor.putInt("attempts", attempts[0]);
-		editor.putInt("maxattempts", attempts[1]);
-		editor.putBoolean("solved", solved);
-		editor.putBoolean("unlocked", unlocked);
-		editor.putString("latitude", Double.valueOf(gpsLocation.getLatitude()).toString());
-		editor.putString("longitude", Double.valueOf(gpsLocation.getLongitude()).toString());
-		editor.putInt("radius", Float.valueOf(gpsLocation.getAccuracy()).intValue());
-		editor.putInt("resetpin", resetPin);
-		editor.commit();
 	}
 
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		// TODO: disable upon connect
-		// menu.findItem(R.id.menu_update).setVisible(ioioConnected);
-		// menu.findItem(R.id.menu_program).setVisible(ioioConnected);
+		menu.findItem(R.id.menu_update).setVisible(ioioConnected);
+		menu.findItem(R.id.menu_program).setVisible(ioioConnected);
 		return true;
 	}
 
@@ -705,7 +688,6 @@ public class ReverseGeocache extends IOIOActivity implements
 		builder.show();
 	}
 
-	// TODO: implement updating via string
 	private boolean updateData(String data, boolean toast) {
 		try {
 			data = data.substring(6);
@@ -724,7 +706,7 @@ public class ReverseGeocache extends IOIOActivity implements
 				check += eepromByte;
 			if(checksum != check) throw new Exception("Checksum failed: " + checksum + " does not match "+ check);
 			// verify that this update data is for the right box - exception thrown on failure
-			if(targetserial != Long.MAX_VALUE && targetserial != boxSerial && boxSerial != -1) throw new Exception("Target serial " + targetserial + " does not match serial "+ boxSerial);
+			if(targetserial != UNIVERSAL_UPDATE && targetserial != boxSerial && boxSerial != -1) throw new Exception("Target serial " + targetserial + " does not match serial "+ boxSerial);
 			// all checks passed, 
 			ioioCommands.add(new IOIOCommand(IOIOCommand.FLASH_DATA, eeprom));
 			return true;
@@ -749,13 +731,8 @@ public class ReverseGeocache extends IOIOActivity implements
 		gpsConnected = true;
 		gpsImage.setImageResource(R.drawable.ic_action_gps_locked);
 		gpsStatus.setText(R.string.locked);
-		if (loc != null) {
-			if (!enableButton) {
-				// locationManager.removeUpdates(locationListener);
-				enableButton = true;
-			} else
-				unlockButton.setEnabled(true);
-		}
+		if (loc != null && ioioConnected)
+			unlockButton.setEnabled(true);
 		currentLocation = loc;
 	}
 
@@ -777,10 +754,23 @@ public class ReverseGeocache extends IOIOActivity implements
 
 		@Override
 		public void onTick(long millisUntilFinished) {
+			// Average the last several battery measurements to smooth out battery readings due to fluctuations in voltage
+			if(numVoltageMeasurements < pastBatteryVoltage.length) {
+				pastBatteryVoltage[numVoltageMeasurements] = batteryVoltage;
+				numVoltageMeasurements++;
+			} else {
+				for(int i = 1; i < pastBatteryVoltage.length; i++)
+					pastBatteryVoltage[i-1] = pastBatteryVoltage[i];
+				pastBatteryVoltage[pastBatteryVoltage.length-1] = batteryVoltage;
+			}
+			double tmp = 0;
+			for(int i = 0; i < pastBatteryVoltage.length; i++)
+				tmp += pastBatteryVoltage[i];
+			final double total = tmp;
 			runOnUiThread(new Runnable() {
 				public void run() {
-					batteryBar.setProgress(Math.max(0, Math.min((int) (167 * (batteryVoltage-1.5)), 100)));
-					batteryPercentage.setText(Math.max(0, Math.min((int) (167 * (batteryVoltage-1.5)), 100))
+					batteryBar.setProgress(Math.max(0, Math.min((int) (167 * ((total/numVoltageMeasurements)-1.5)), 100)));
+					batteryPercentage.setText(Math.max(0, Math.min((int) (167 * ((total/numVoltageMeasurements)-1.5)), 100))
 							+ "%");
 				}
 			});
@@ -882,8 +872,8 @@ public class ReverseGeocache extends IOIOActivity implements
 		static final int PHONE_NUMBER_ADDRESS = 35;
 
 		// Servo/PWM constants
-		private static final int SERVO_CLOSED = 700;
-		private static final int SERVO_OPEN = 2000;
+		private static final int SERVO_CLOSED = 1400;
+		private static final int SERVO_OPEN = 2500;
 		private static final int PWM_FREQ = 100;
 		
 
@@ -907,36 +897,17 @@ public class ReverseGeocache extends IOIOActivity implements
 				eeprom = ioio_.openTwiMaster(0, TwiMaster.Rate.RATE_100KHz,
 						false);
 				connectTimer.cancel();
-				batteryTimer.start();
 				ioioConnected = true;
-				System.out.println("connected");
 				gpsLocation = readCoords();
+				System.out.println(gpsLocation.getLatitude());
 				attempts = readAttempts();
 				solved = readState();
 				resetPin = readResetPin();
-				System.out.println(resetPin);
-				byte[] eeprom = readEEPROM(0,64);
-				System.out.println(ByteConversion.byteArrayToHexString(eeprom));
-				long tmpSerial = readSerial();
-				if(tmpSerial != boxSerial && boxSerial != -1) {
-					Toast.makeText(ReverseGeocache.this, "These are not the puzzles you are looking for!", Toast.LENGTH_SHORT).show();
-					ioio_.disconnect();
-				} else {
-					boxSerial = tmpSerial;
-				}
+				boxSerial = readSerial();
 				unlocked = readLock();
-
+				batteryVoltage = battery.getVoltage();
+				batteryTimer.start();
 				enableUi(true);
-				
-				SharedPreferences prefs = PreferenceManager
-						.getDefaultSharedPreferences(ReverseGeocache.this);
-				SharedPreferences.Editor editor = prefs.edit();
-				String update = prefs.getString("update", "");
-				if(update.length() > 6)
-					updateData(update, false);
-				editor.putString("update", "");
-				editor.commit();
-				
 			} catch (ConnectionLostException e) {
 				enableUi(false);
 				e.printStackTrace();
@@ -1006,6 +977,7 @@ public class ReverseGeocache extends IOIOActivity implements
 							break;
 						case IOIOCommand.WRITE_VERSION:
 							writeVersion(cmd.getInt());
+							break;
 						case IOIOCommand.RESET:
 							reset();
 							break;
@@ -1287,14 +1259,8 @@ public class ReverseGeocache extends IOIOActivity implements
 				throws ConnectionLostException, InterruptedException {
 			byte[] request = new byte[] { (byte) (address >> 8),
 					(byte) (address & 0xFF), b };
-			System.out.println("test");
-			byte[] tmp = new byte[1];
-//			System.out.println(eeprom.writeRead(0x50, false, new byte[] {0, 0, 1}, 3, tmp, 0));
-//			System.out.println("read " + tmp[0]);
-//			System.out.println("writing " + b);
 			eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request,
-					request.length, tmp, 0);
-			System.out.println("success");
+					request.length, null, 0);
 		}
 
 		/**
@@ -1311,10 +1277,11 @@ public class ReverseGeocache extends IOIOActivity implements
 		public void writeEEPROMByteArray(int address, byte[] b)
 				throws ConnectionLostException {
 			try {
-				for (int i = 0; i < b.length; i++) {
-					writeEEPROM(address + i, b[i]);
-					Thread.sleep(5);
-				}
+				byte[] request = new byte[2 + b.length];
+				request[0] = (byte) (address >> 8);
+				request[1] = (byte) (address & 0xFF);
+				System.arraycopy(b, 0, request, 2, b.length);
+				eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request, request.length, null, 0);
 			} catch (InterruptedException e) {
 				ioio_.disconnect();
 			}
@@ -1334,21 +1301,13 @@ public class ReverseGeocache extends IOIOActivity implements
 
 		public void writeEEPROMByteArrayDialog(int address, final byte[] b)
 				throws ConnectionLostException {
-			try {
-				byte[] request = new byte[2 + b.length];
-				request[0] = (byte) (address >> 8);
-				request[1] = (byte) (address & 0xFF);
-				System.arraycopy(b, 0, request, 2, b.length);
-				eeprom.writeRead(EEPROM_I2C_ADDRESS, false, request, request.length, null, 0);
-				runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						Toast.makeText(ReverseGeocache.this, "Update successful!", Toast.LENGTH_SHORT).show();
-					}
-				});
-			} catch (InterruptedException e) {
-				ioio_.disconnect();
-			}
+			writeEEPROMByteArray(address, b);
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					Toast.makeText(ReverseGeocache.this, "Update successful!", Toast.LENGTH_SHORT).show();
+				}
+			});
 		}
 
 		/**
