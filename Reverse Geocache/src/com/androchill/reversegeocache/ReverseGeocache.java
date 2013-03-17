@@ -23,12 +23,14 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.app.DialogFragment;
 import android.content.ClipboardManager;
@@ -854,7 +856,7 @@ public class ReverseGeocache extends IOIOActivity implements
 		// EEPROM constants
 		// using a 24LC1025 but 64 put here for backwards compatibility
 		// we're using less than 64 bytes of EEPROM anyway
-		static final int EEPROM_SIZE = 64;
+		static final int EEPROM_SIZE = 56;
 		static final int EEPROM_I2C_ADDRESS = 0x50;
 
 		// addresses for data in EEPROM
@@ -898,15 +900,30 @@ public class ReverseGeocache extends IOIOActivity implements
 						false);
 				connectTimer.cancel();
 				ioioConnected = true;
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ReverseGeocache.this);
+				SharedPreferences.Editor editor = prefs.edit();
+				String update = prefs.getString("update", "");
+				boxSerial = readSerial();
 				gpsLocation = readCoords();
-				System.out.println(gpsLocation.getLatitude());
 				attempts = readAttempts();
 				solved = readState();
 				resetPin = readResetPin();
-				boxSerial = readSerial();
 				unlocked = readLock();
+				if(update.length() > 6) {
+				  updateData(update, false);
+				  boxSerial = readSerial();
+				  gpsLocation = readCoords();
+				  attempts = readAttempts();
+				  solved = readState();
+				  resetPin = readResetPin();
+				  unlocked = readLock();
+				}
+				unlock(unlocked);
+				editor.putString("update", "");
+				editor.commit();
 				batteryVoltage = battery.getVoltage();
 				batteryTimer.start();
+				
 				enableUi(true);
 			} catch (ConnectionLostException e) {
 				enableUi(false);
