@@ -199,20 +199,6 @@ public class ReverseGeocache extends IOIOActivity implements
 	@Override
 	public void onClick(View v) {
 
-		// if puzzle is unsolved and attempts remain
-		if (attempts[0] < attempts[1] && !solved) {
-			attempts[0]++;
-			attemptsStatus.setText((attempts[1] - attempts[0]) + " remaining");
-			try {
-				ioioCommands.put(new IOIOCommand(IOIOCommand.WRITE_ATTEMPTS, attempts[0]));
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-
-			// check distance between current and target location
-			// if less than desired radius, unlock box and mark solved
-			float dist = gpsLocation.distanceTo(currentLocation);
-			if (dist <= gpsLocation.getAccuracy()) {
 				solved = true;
 				try {
 					ioioCommands
@@ -225,30 +211,6 @@ public class ReverseGeocache extends IOIOActivity implements
 					e.printStackTrace();
 				}
 				lockStatus.setText(R.string.unlocked);
-			} else {
-				if(dist > 10000)
-					Toast.makeText(this, "Distance: " + dist/1000 + "km",
-						Toast.LENGTH_SHORT).show();
-				else
-					Toast.makeText(this, "Distance: " + dist + "m",
-							Toast.LENGTH_SHORT).show();
-			}
-		} else if (solved) {
-			// somehow the box was locked but the puzzle
-			// was already solved, so unlock box again
-			try {
-				ioioCommands.put(new IOIOCommand(IOIOCommand.WRITE_UNLOCKED, true));
-				Toast.makeText(this, "Open!", Toast.LENGTH_SHORT).show();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		} else if (attempts[0] >= attempts[1]) {
-			AlertDialog.Builder builder = new AlertDialog.Builder(this,
-					AlertDialog.THEME_HOLO_DARK);
-			builder.setTitle(R.string.out_of_attempts)
-					.setMessage(R.string.locked_forever)
-					.setNeutralButton(R.string.ok, null);
-		}
 	}
 
 	@Override
